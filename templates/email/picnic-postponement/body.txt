@@ -1,0 +1,7 @@
+Hi {{ first_name }},
+
+<small><i>You are recieving this message from <a href="https://bikeaction.org/">Philly Bike Action</a> because you RSVPd to our <a href="https://bikeaction.org/events/belmont-speedway-family-picnic/">Belmont Speedway Family Picnic</a>.</i></small>
+
+Thanks for your interest in attending the Belmont Speedway Family Picnic. Unfortunately, due to the large storm passing through the region this weekend, we have decided to **postpone The Belmont Speedway Family Picnic.** It will now happen in one week’s time, on Sunday, Oct. 19th from 12-2 p.m. We hope you all can make it then.
+
+**Philly Bike Action**
