@@ -25,7 +25,11 @@ class NominationForm(forms.ModelForm):
         help_texts = {
             "nomination_statement": (
                 "Please provide a statement explaining why you believe this person "
-                "would be a good fit for this role."
+                "would be a good fit for this role. "
+                "<b>Note</b> What you type here will be PUBLIC and linked from the ballot "
+                "under the nominees name. "
+                "If nominating someone besides yourself, "
+                "they will have the opportunity to accept or decline your nomination."
             ),
         }
         widgets = {

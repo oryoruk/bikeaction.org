@@ -12,6 +12,9 @@
     {% if next_url %}
     <input type="hidden" name="next" value="{{ next_url }}">
     {% endif %}
+    {% if self_nomination_id %}
+    <input type="hidden" name="self_nomination_id" value="{{ self_nomination_id }}">
+    {% endif %}
 
     {{ form.non_field_errors }}
 

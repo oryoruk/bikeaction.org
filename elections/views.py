@@ -144,11 +144,7 @@ def nomination_form(request, election_slug, pk=None):
                             "nominee_id": nominee_record.id,
                         },
                     )
-                    edit_url = reverse(
-                        "nomination_edit",
-                        kwargs={"election_slug": election.slug, "pk": nomination.id},
-                    )
-                    return redirect(f"{profile_url}?next={edit_url}")
+                    return redirect(f"{profile_url}?self_nomination_id={nomination.id}")
 
                 if nomination:
                     # Update existing nomination (could be draft or submitted self-nomination)
@@ -415,12 +411,31 @@ def nominee_profile_edit(request, election_slug, nominee_id):
 
     # Get the next URL from query params (for redirecting back after completion)
     next_url = request.GET.get("next") or request.POST.get("next")
+    # Get self-nomination ID if this profile edit is part of a self-nomination flow
+    self_nomination_id = request.GET.get("self_nomination_id") or request.POST.get(
+        "self_nomination_id"
+    )
 
     if request.method == "POST":
         form = NomineeProfileForm(request.POST, request.FILES, instance=nominee, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Your nominee profile has been updated.")
+
+            # If this was part of a self-nomination flow, auto-submit the draft nomination
+            if self_nomination_id:
+                try:
+                    nomination = Nomination.objects.get(
+                        id=self_nomination_id, nominee=nominee, nominator=request.user, draft=True
+                    )
+                    # Submit the nomination (this will auto-accept it via the model's save method)
+                    nomination.draft = False
+                    nomination.save()
+                    messages.success(request, "Your self-nomination has been submitted!")
+                except Nomination.DoesNotExist:
+                    # Nomination not found or already submitted, just continue
+                    pass
+
             # Redirect back to the nomination response page if next_url is provided
             if next_url:
                 return redirect(next_url)
@@ -431,5 +446,11 @@ def nominee_profile_edit(request, election_slug, nominee_id):
     return render(
         request,
         "elections/nominee_profile_edit.html",
-        {"form": form, "nominee": nominee, "election": election, "next_url": next_url},
+        {
+            "form": form,
+            "nominee": nominee,
+            "election": election,
+            "next_url": next_url,
+            "self_nomination_id": self_nomination_id,
+        },
     )

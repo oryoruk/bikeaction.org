@@ -95,8 +95,9 @@ class Nominee(models.Model):
     board_responsibilities_acknowledged = models.BooleanField(
         default=False,
         help_text=mark_safe(
-            "I have read the <a href='https://bikeaction.org/about/board/"
-            "responsibilities-and-expectations' target='_blank'>PBA Board "
+            "I have read the <a href='https://docs.google.com/document/d/"
+            "1ptPY_IUtLQR6gI_yN76YwRmKGN9SsWXwol66HLl5iS0/edit?tab=t.0' "
+            "target='_blank'>PBA Board "
             "responsibilities and expectations</a>"
         ),
     )

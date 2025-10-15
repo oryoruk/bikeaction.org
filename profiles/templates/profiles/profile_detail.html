@@ -192,7 +192,7 @@
   {% for election in open_nomination_elections %}
     <div style="padding: 1.5rem; background-color: #e8f4f8; border-left: 4px solid #007bff; margin: 1rem 0;">
       <h3 style="margin: 0 0 0.5rem 0;"><i class="fa-solid fa-vote-yea"></i> Nominations Open: {{ election.title }}</h3>
-      <p style="margin: 0.5rem 0;">Nominations are currently open! You were a member in good standing as of the eligibility deadline ({{ election.membership_eligibility_deadline|date:"F d, Y" }}), so you can nominate qualified members for this election.</p>
+      <p style="margin: 0.5rem 0;">Nominations are currently open! You were a member in good standing as of the eligibility deadline ({{ election.membership_eligibility_deadline|date:"F d, Y" }}), so you can nominate qualified members for this election. Including yourself!</p>
       <p style="margin: 0.5rem 0;"><strong>Nominations close:</strong> {{ election.nominations_close|date:"F d, Y g:i A" }}</p>
       <p style="margin: 1rem 0 0 0;">
         <a href="{% url 'nomination_form' election.slug %}" class="submit-button">Submit a Nomination</a>

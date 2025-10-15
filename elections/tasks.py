@@ -38,8 +38,17 @@ Please respond to this nomination by visiting:
 
 [Respond to Nomination]({respond_url})
 
-You can accept or decline this nomination. If you accept, please make sure to complete
-your nominee profile with a photo and acknowledgment of board responsibilities.
+You can use this link to accept or decline this particular nomination.
+
+Accepting a nomination is saying you want to run for the board **and**
+you want this statement to appear publicly on the website.
+
+You may have been nominated by more than one person.
+If you want to run, you must accept at least one nomination
+or nominate your self.
+
+You can accept as many nominations (ie endorsements) as you want
+to appear publicly, linked to from the ballot next to your name.
 
 **Important Dates:**
 
