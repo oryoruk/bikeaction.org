@@ -161,7 +161,7 @@ class ShirtsAreDoneMixin:
         return HttpResponseRedirect(reverse("profile"))
 
 
-class ShirtOrderView(LoginRequiredMixin, CreateView):
+class ShirtOrderView(LoginRequiredMixin, ShirtsAreDoneMixin, CreateView):
     model = ShirtOrder
     fields = ["product_type", "fit", "print_color", "size"]
 
@@ -184,7 +184,7 @@ class ShirtOrderView(LoginRequiredMixin, CreateView):
         return reverse("shirt_pay", kwargs={"shirt_id": self.obj.id})
 
 
-class ShirtOrderDeleteView(LoginRequiredMixin, DeleteView):
+class ShirtOrderDeleteView(LoginRequiredMixin, ShirtsAreDoneMixin, DeleteView):
     model = ShirtOrder
 
     def get_success_url(self):
@@ -194,6 +194,10 @@ class ShirtOrderDeleteView(LoginRequiredMixin, DeleteView):
 
 @csrf_exempt
 def create_tshirt_checkout_session(request, shirt_id):
+    # Close shirt orders
+    messages.add_message(request, messages.INFO, "Sorry, shirt orders are closed!")
+    return HttpResponseRedirect(reverse("profile"))
+
     stripe.api_key = settings.STRIPE_SECRET_KEY
 
     # Get the shirt order to determine product type

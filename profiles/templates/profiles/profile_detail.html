@@ -497,11 +497,14 @@
 <hr>
 <div class="form-header">
   <h2>T-Shirts & Sweatshirts</h2>
+  <i>Shirt pre-orders are closed! Check back later for future pre-order opportunities.</i>
+  <!--
   {% if request.user.profile.complete %}
   <p><a class="submit-button" href="{% url 'shirt_order' %}">Pre-Order a shirt or sweatshirt</a></p>
   {% else %}
   <span>Please <a href="{% url 'profile_update' %}">complete your profile</a> to pre-order.</span>
   {% endif %}
+  -->
 {% if request.user.tshirt_orders.all %}
   <p>Your Shirt Orders</p>
   <div class="table-container">
