@@ -1,0 +1,13 @@
+{% load wagtailimages_tags %}
+<div class="block-card-container block-card-container-img-{{ value.image_side }}">
+  <div class="block-card-img">
+    {% image value.image max-400x400 as img %}
+    <img src="{{img.url}}">
+  </div>
+  <div class="block-card-contents">
+    {% if value.header %}
+    <h3 class="block-card-contents-title">{{ value.header }}</h3>
+    {% endif %}
+    <p class="block-card-contents-text">{{ value.text }}</p>
+  </div>
+</div>

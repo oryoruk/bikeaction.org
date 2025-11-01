@@ -1,0 +1,25 @@
+<div style="width: 100%"><small style="width: 100%; text-align: center;"><i>You are receiving this email from <a href="https://bikeaction.org">Philly Bike Action</a> because you have a PBA account.</i></small></div>
+
+Hello {{ profile.user.first_name }},
+
+We need your help **by June 12** to make City Council authorize a **brand-new bike lane on Penn Square (City Hall)**\!
+
+1. **Sign our petition** and leave a comment stating your support.  
+2. **Email City Council** using our form that pops up after signing.  
+3. **Share** with friends, family, and colleagues who want safer streets\!
+
+City Hall is for everyone—we want you all to make your voices heard. Let’s get this thing built\!
+
+<div style="width: 100%; text-align: center">
+<a href="https://bikeaction.org/campaigns/build-the-city-hall-bike-lane/" class="submit-button">
+SIGN PETITION<br>&<br> EMAIL COUNCIL
+</a>
+</div>
+
+PennDOT is repaving the streets around City Hall this summer, and OTIS will consider adding **safe bike infrastructure** to the inner loop of the traffic circle—but **they need supporting legislation** from City Council, specifically Councilmember Jeffery Young, Jr. (District 5\)
+
+The City Hall bike lane would be the **keystone** of Philly’s bike network—connecting to existing lanes on W Market St, JFK Blvd, 15th St, and a bus–bike lane on E Market, and future lanes on Broad Street and others\!
+
+**City Council must introduce legislation** for a bike lane quickly—or else we’ll miss our chance for a safer Penn Square for years to come. City Council recesses for the summer on **June 12**, so we need Council to write this legislation ASAP.
+
+**Philly Bike Action**

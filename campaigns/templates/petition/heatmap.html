@@ -1,0 +1,19 @@
+{% load static leaflet_tags %}
+<html>
+  <head>
+    {% leaflet_js %}
+    {% leaflet_css %}
+    <script src="{% static 'js/leaflet-heat.js' %}"></script>
+  </head>
+  <body>
+    <script>
+      var heatmapLayer = L.heatLayer(JSON.parse('{{ pins_json }}'), {radius: 10, blur: 5, minOpacity: .4})
+      function map_init (map, options) {
+        map.setView([39.9528, -75.1635], 12);
+        heatmapLayer.addTo(map);
+      }
+    </script>
+
+    {% leaflet_map "petition_signatures" callback="window.map_init" %}
+  </body>
+</html>

@@ -1,0 +1,34 @@
+<small><i>You are receiving this email from <a href="https://bikeaction.org/">Philly Bike Action</a> because you signed our <a href="https://bikeaction.org/campaigns/build-the-city-hall-bike-lane/">Build the City Hall Bike Lane !</a>" petition in partnership <a href="https://www.5thsq.org/">5th Square</a> and you live within or near the Logan Square Neighborhood Association.</i></small>
+
+Hello {{ profile.user.first_name }},
+
+**Demand** **a City Hall Bike Lane at the Logan Square Neighborhood Association Meeting on Wednesday Night**
+
+<div style="width: 100%; text-align: center;">
+  <img style="width: 66%;" src="templates/email/LSNA/images/hero.png">
+</div>
+
+This Wednesday, June 11th, Logan Square Neighborhood Association ([LSNA](https://www.lsnaphilly.org/)) will be hosting 5th District **Councilmember Jeffery Young, Jr.** at their annual meeting. Councilmember Young has the power to introduce a bill to permit a bike lane around City Hall, and needs to do so by Thursday, June 12th. 
+
+**We ask that you attend the meeting and ask Councilmember Young** to listen to his constituents (you\!) and introduce legislation for the City Hall Bike Lane. 
+
+Our petition has over 1,000 signatures, including 190 from Young's district, and 30 from LSNA residents\!
+
+**Meeting Details:** Wednesday, June 11 | 7:00PM  
+*Barnes Foundation (Maguire Garden Pavilion & Restaurant Garden.)*  
+*2025 Benjamin Franklin Parkway*
+
+Everyone who lives within the boundaries of the neighborhood is considered a member and is welcome to attend the meeting.
+
+Questions on how best to take action? Email [info@bikeaction.org](mailto:info@bikeaction.org)
+
+Thank you for your support in making Philadelphia's streets safer for everyone who uses them\!
+
+**Philly Bike Action** 
+
+**Want more from Philly Bike Action?** Join our [newsletter](https://bikeaction.org) or create a [PBA Account](https://apps.bikeaction.org/accounts/signup/) so we can let you know when important input opportunities like this one happen in your neighborhood.
+
+<div style="display: flex; justify-content: center; align-items: center; max-width: 100%; margin-left: 2em; margin-right: 2em; text-align: center;">
+  <span style="padding: 1em; width: 33%;"><a href="https://bikeaction.org/"><img src="templates/email/LSNA/images/logo-PBA.png"       style="width: 100%; vertical-align: middle;"></a></span>
+  <span style="padding: 1em; width: 33%;"><a href="https://www.5thsq.org/"><img src="templates/email/LSNA/images/logo-5th-square.png" style="width: 100%; vertical-align: middle;"></a></span>
+</div>

@@ -10,10 +10,28 @@ from campaigns.models import Petition, PetitionSignature
 class PetitionSignatureForm(forms.ModelForm):
     class Meta:
         model = PetitionSignature
-        fields = Petition.PetitionSignatureChoices.values + ["newsletter_opt_in"]
+        fields = Petition.PetitionSignatureChoices.values + [
+            "newsletter_opt_in",
+            "create_account_opt_in",
+        ]
         help_texts = {
             "comment": "Your comment, which will be displayed on the campaign page",
-            "newsletter_opt_in": "Check this box to receive our monthly newsletter",
+            "newsletter_opt_in": "Subscribe to Philly Bike Action's monthly newsletter.",
+            "create_account_opt_in": (
+                "By creating a PBA account, you agree that you have read the "
+                '<a target="_blank" href="https://apps.bikeaction.org/policies/code-of-conduct/">'
+                "Philly Bike Action Code of Conduct</a>"
+                " and "
+                '<a target="_blank" href="https://apps.bikeaction.org/policies/privacy-and-data/">'
+                "Privacy and Data Statement</a>."
+            ),
+        }
+        labels = {
+            "first_name": "First Name",
+            "last_name": "Last Name",
+            "zip_code": "Zip Code",
+            "newsletter_opt_in": "Newsletter opt in",
+            "create_account_opt_in": "Create PBA Account",
         }
 
     send_email = forms.BooleanField(
@@ -25,6 +43,9 @@ class PetitionSignatureForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.petition = kwargs.pop("petition", None)
+        retained_fields = ["newsletter_opt_in"]
+        if self.petition.create_account_opt_in:
+            retained_fields += ["create_account_opt_in"]
         super().__init__(*args, *kwargs)
         required_fields = copy.deepcopy(self.petition.signature_fields)
         to_remove = []
@@ -44,9 +65,25 @@ class PetitionSignatureForm(forms.ModelForm):
                 to_remove.remove("last_name")
             if "email" in to_remove:
                 to_remove.remove("email")
+        if self.petition.create_account_opt_in:
+            required_fields.append("first_name")
+            required_fields.append("last_name")
+            required_fields.append("email")
+            required_fields.append("postal_address_line_1")
+            required_fields.append("zip_code")
+            if "first_name" in to_remove:
+                to_remove.remove("first_name")
+            if "last_name" in to_remove:
+                to_remove.remove("last_name")
+            if "email" in to_remove:
+                to_remove.remove("email")
+            if "postal_address_line_1" in to_remove:
+                to_remove.remove("postal_address_line_1")
+            if "zip_code" in to_remove:
+                to_remove.remove("zip_code")
         to_remove.remove("captcha")
         for field in to_remove:
-            if field not in ["newsletter_opt_in"]:
+            if field not in retained_fields:
                 del self.fields[field]
         for field in self.fields.keys():
             if field in required_fields and (

@@ -1,0 +1,19 @@
+Hello {{ profile.user.first_name }}, *You are receiving this email from [Philly Bike Action](https://bikeaction.org/) because you have a PBA account.*
+
+PennDOT is collecting feedback on our transportation needs in its biennial [Transportation Survey](https://survey.talkpatransportation.com/#/Survey). 
+
+Send a clear message to PennDOT that we need protected bike lanes citywide, starting on Broad Street\!
+
+Save time by using **Philly Bike Action’s [survey guide](https://docs.google.com/document/d/18DAkyoXtpyWymOetBJGXq1DY6sHhlGes/edit?usp=sharing&ouid=103354804232340536708&rtpof=true&sd=true)** with our suggested improvements and guidance on how to fill out the survey effectively.
+
+<span style="width: 80%; text-align: center;"><a href="https://survey.talkpatransportation.com/#/Survey"><img style="width: 100%; border-radius: 5px; border: solid grey;" src="templates/email/penndot_broad_st_bike_lanes_2025_03_20/images/PennDOT_survey_home.jpg"></a></span>
+
+The survey results will influence funding – now is your chance to tell PennDOT where you want protected bike lanes and push back against using our taxpayer dollars for expansion of highways and deadly traffic corridors.
+
+Don’t delay: **the survey closes April 30, 2025**\! We’ll send a reminder email as the deadline approaches. 
+
+Questions on how to complete the survey? Reply to this email and we’ll get back to you.
+
+Further information on this survey can be found [here](https://talkpatransportation.com/public-comment-period).
+
+**Philly Bike Action**

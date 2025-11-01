@@ -1,6 +1,70 @@
-{% extends 'base.html' %}
-{% load wagtailcore_tags %}
+{% extends "base.html" %}
+{% load static %}
 
+{% load wagtailuserbar %}
+{% load wagtailcore_tags %}
+{% load wagtailimages_tags %}
+
+{% block body_class %}cms-stream-page{% endblock %}
+
+{% block content_container %}
+<div class="content-container homepage-container">
 {% block content %}
-  {{ page.body|richtext }}
+  {% wagtailuserbar %}
+  <div class="homepage-content">
+    <div class="homepage-body-container">
+      {% image page.hero_background width-768 as body_background %}
+      <div class="homepage-body-background-overlay homepage-body-background-overlay-bottom-gradient"></div>
+      <img class="homepage-body-background" src="{{body_background.url}}">
+      <div class="homepage-actions-container">
+        <div class="homepage-leadout">
+          <div class="homepage-logo-img">
+            <img src="{% static 'images/pba-logo.svg' %}">
+          </div>
+          <div class="homepage-leadout-img">
+            <img src="{% static 'images/pba-glyph.svg' %}">
+          </div>
+          <div class="homepage-leadout-text">
+            <div class="title">{{ page.hero_title }}</div>
+            <div class="text">{{ page.hero_text|safe }}</div>
+          </div>
+        </div>
+
+        <div class="homepage-action-join">
+          <div class="action-text">{{ page.hero_buttons_cta }}</div>
+          <div class="button-corral" style="display: grid; grid-template-columns: 1fr 1fr;">
+            {% for button in page.hero_buttons %}
+            <a href="{{ button.value.url.get_url }}"
+              {% if button.value.url.new_window %}target="_blank"{% endif %}
+              style="{% if button.value.width == "full" %}grid-column: span 2;{% endif %}"
+              class="homepage-button homepage-button-{{ button.value.color }}"
+            >{{ button.value.text }}{% if button.value.icon %} <i class="{{ button.value.icon }}"></i>{% endif %}</a>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="homepage-action-subscribe">
+        <div>
+            {% with homepage_newsletter_form  as form %}
+            {% with "homepage" as form_name %}
+            {% include '_newsletter_signup_partial.html' %}
+            {% endwith %}
+            {% endwith %}
+        </div>
+      </div>
+
+    </div>
+
+    <div class="homepage-body-container">
+      {% image page.body_background width-768 as body_background %}
+      <div class="homepage-body-background-overlay homepage-body-background-overlay-top-gradient"></div>
+      <img class="homepage-body-background" src="{{body_background.url}}">
+      <div class="homepage-body">
+        {% include_block page.body %}
+      </div>
+    </div>
+  </div>
+{% endblock %}
+</div>
 {% endblock %}

@@ -1,22 +1,22 @@
+import datetime
 import json
 import pathlib
 
 from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.gis.geos import Point as GEOPoint
 from django.db import transaction
 from django.db.models import Count
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.utils import timezone
 from django.utils.html import mark_safe
+from email_log.models import Email
 from shapely.geometry import Point, shape
 
 from facets.models import District, RegisteredCommunityOrganization
 from facets.utils import geocode_address
-
-with open(pathlib.Path(__file__).parent / "data" / "Zoning_RCO-2.geojson") as f:
-    RCOS = json.load(f)
-
-with open(pathlib.Path(__file__).parent / "data" / "Council_Districts_2024.geojson") as f:
-    DISTRICTS = json.load(f)
+from profiles.models import Profile
 
 with open(pathlib.Path(__file__).parent / "data" / "Political_Divisions.geojson") as f:
     DIVISIONS = json.load(f)
@@ -50,30 +50,26 @@ async def query_address(request):
         return HttpResponse(f'<p style="color: red;">{error}</p>')
 
     point = Point(address.longitude, address.latitude)
+    geopoint = GEOPoint(address.longitude, address.latitude)
 
     rcos = []
     rcos_geojson = []
     other = []
     wards = []
-    for feature in RCOS["features"]:
-        polygon = shape(feature["geometry"])
-        if polygon.contains(point):
-            rcos_geojson.append(mark_safe(json.dumps(feature)))
-            if feature["properties"]["ORG_TYPE"] == "Ward":
-                wards.append(feature["properties"])
-            elif feature["properties"]["ORG_TYPE"] in ["NID", "SSD", None]:
-                other.append(feature["properties"])
-            else:
-                rcos.append(feature["properties"])
+    primary_rco = None
+    async for rco in RegisteredCommunityOrganization.objects.filter(mpoly__contains=geopoint):
+        if rco.targetable:
+            primary_rco = rco
+        rcos_geojson.append(mark_safe(rco.mpoly.geojson))
+        if rco.properties["ORG_TYPE"] == "Ward":
+            wards.append(rco)
+        elif rco.properties["ORG_TYPE"] in ["NID", "SSD", None]:
+            other.append(rco)
+        else:
+            rcos.append(rco)
 
-    district = None
-    district_geojson = None
-    for feature in DISTRICTS["features"]:
-        polygon = shape(feature["geometry"])
-        if polygon.contains(point):
-            district = feature["properties"]["DISTRICT"]
-            district_geojson = mark_safe(json.dumps(feature))
-            break
+    district = await District.objects.filter(mpoly__contains=geopoint).aget()
+    district_geojson = mark_safe(district.mpoly.geojson)
 
     ward, division = None, None
     for feature in DIVISIONS["features"]:
@@ -99,6 +95,7 @@ async def query_address(request):
             "DISTRICT_GEOJSON": district_geojson,
             "RCOS": rcos,
             "RCOS_GEOJSON": rcos_geojson,
+            "primary_rco": primary_rco,
             "OTHER": other,
             "WARDS": wards,
             "WARD": ward,
@@ -116,6 +113,84 @@ def report(request):
     rcos = RegisteredCommunityOrganization.objects.annotate(Count("contained_profiles"))
     context = {"districts": districts, "rcos": rcos}
     return render(request, "facets_report.html", context=context)
+
+
+@staff_member_required
+def email_report(request):
+    thirty_days_ago = timezone.now() - datetime.timedelta(days=30)
+
+    all_profiles = Profile.objects.filter(
+        user__email__isnull=False, location__isnull=False
+    ).select_related("user")
+
+    email_to_profile = {profile.user.email.lower(): profile for profile in all_profiles}
+
+    email_counts = {}
+
+    recent_emails = Email.objects.filter(date_sent__gte=thirty_days_ago).values_list(
+        "recipients", flat=True
+    )
+
+    for recipients_field in recent_emails:
+        if recipients_field:
+            recipients_lower = recipients_field.lower()
+            for email_addr in email_to_profile.keys():
+                if email_addr in recipients_lower:
+                    email_counts[email_addr] = email_counts.get(email_addr, 0) + 1
+
+    districts_data = []
+    for district in District.objects.all():
+        profiles_in_district = all_profiles.filter(location__within=district.mpoly)
+        profile_count = profiles_in_district.count()
+
+        if profile_count > 0:
+            total_emails = sum(
+                email_counts.get(profile.user.email.lower(), 0) for profile in profiles_in_district
+            )
+
+            avg_emails = total_emails / profile_count if profile_count > 0 else 0
+
+            districts_data.append(
+                {
+                    "name": district.name,
+                    "profile_count": profile_count,
+                    "total_emails": total_emails,
+                    "avg_emails": round(avg_emails, 2),
+                }
+            )
+
+    districts_data.sort(key=lambda x: x["avg_emails"], reverse=True)
+
+    rcos_data = []
+    for rco in RegisteredCommunityOrganization.objects.filter(targetable=True):
+        profiles_in_rco = all_profiles.filter(location__within=rco.mpoly)
+        profile_count = profiles_in_rco.count()
+
+        if profile_count > 0:
+            total_emails = sum(
+                email_counts.get(profile.user.email.lower(), 0) for profile in profiles_in_rco
+            )
+
+            avg_emails = total_emails / profile_count if profile_count > 0 else 0
+
+            rcos_data.append(
+                {
+                    "name": rco.name,
+                    "profile_count": profile_count,
+                    "total_emails": total_emails,
+                    "avg_emails": round(avg_emails, 2),
+                }
+            )
+
+    rcos_data.sort(key=lambda x: x["avg_emails"], reverse=True)
+
+    context = {
+        "districts": districts_data,
+        "rcos": rcos_data,
+        "date_range": f"Last 30 days (since {thirty_days_ago.date()})",
+    }
+
+    return render(request, "facets_email_report.html", context=context)
 
 
 def rco_list(request):

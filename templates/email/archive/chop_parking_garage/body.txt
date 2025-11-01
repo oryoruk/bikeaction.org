@@ -1,0 +1,23 @@
+Hi {{ first_name }},
+
+*You are receiving this email from [Philly Bike Action](https://bikeaction.org) because you have a PBA account and live in City Council District 2\.*
+
+Last week, CHOP [announced](https://www.inquirer.com/business/health/childrens-hospital-philadelphia-parking-garage-20250425.html) plans to build a massive 1000 car parking garage at 3000 Grays Ferry Avenue. 
+
+The project would add a large unsignaled driveway through the Grays Ferry bike lane, which will be dangerous for people on bikes and may increase the risk of a crash.
+
+<span style="width: 80%; text-align: center;"><img style="width: 100%; border-radius: 5px; border: solid grey;" src="templates/email/chop_parking_garage/overview.png"></span>
+
+Tomorrow, there is a Civic Design Review Meeting to consider the project. Let them know you don't want the project to create conflict points with the bike lane.  
+
+Send your comments by 12pm TODAY to the Civic Design Review committee and Council President Johnson using this **suggested [email](mailto:cdr@phila.gov?cc=kenyatta.johnson@phila.gov&subject=bike%20safety%20concerns%20with%20Grays%20Ferry%20Ave%20parking%20garage&body=Dear%20Civic%20Design%20Review%20Committee%2C%0A%0AAs%20a%20resident%20of%20the%20second%20councilmanic%20district%2C%20I%20am%20concerned%20that%20the%20recently%20proposed%20CHOP%20parking%20garage%2C%20to%20be%20built%20at%203000%20Grays%20Ferry%20Ave%2C%20will%20have%20negative%20impacts%20on%20the%20safety%20of%20bicyclists%20using%20the%20Grays%20Ferry%20Ave%20bike%20lane.%0A%0AThe%20project%20would%20add%20a%20large%20unsignaled%20driveway%20through%20the%20Grays%20Ferry%20bike%20lane%2C%20which%20will%20be%20dangerous%20for%20people%20on%20bikes%20and%20may%20increase%20the%20risk%20of%20a%20crash.%0A%0APlease%20consider%20adding%20speed%20bumps%20and%20concrete%20protection%20to%20slow%20down%20drivers%20and%20maintain%20cyclist%20safety.%0A%0AThank%20you%2C%0A%0A%3C%3CYOUR%20NAME%20HERE%3E%3E%0A%3C%3CYOUR%20ADDRESS%20HERE%3E%3E)**.
+
+You can attend or call in to the Civic Design Review Meeting to share your concerns:
+
+<p style="text-align: center;">
+<a href="https://www.phila.gov/media/20250422133403/CDR-Agenda_May2025.pdf"><i>Civic Design Review Meeting for 3000 Grays Ferry Ave</i></a><br>
+<b>Tuesday, May 6, 2025 - 1:00 PM</b><br>
+<i>Attend in-person at 1515 Arch Street, 18th Floor, Room 18-029</i> <br>
+<i>Virtually (<a href="https://us02web.zoom.us/webinar/register/WN_X4z48ofCSkeVKdZP1G_WHQ">Zoom Link</a>)</i> <br>
+<i>or send written comments to <a href="mailto:cdr@phila.gov">cdr@phila.gov</a> and cc <a href="mailto:kenyatta.johnson@phila.gov">kenyatta.johnson@phila.gov</a> by noon on Monday, May 5</i>
+</p>

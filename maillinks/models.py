@@ -20,6 +20,7 @@ class MailLink(models.Model):
     # Email
     to = models.CharField(max_length=1024)
     cc = models.CharField(max_length=1024, blank=True, null=True)
+    bcc = models.CharField(max_length=1024, blank=True, null=True)
     subject = models.CharField(max_length=512)
     body = models.TextField()
 
@@ -34,15 +35,25 @@ class MailLink(models.Model):
     def get_absolute_url(self):
         return reverse("maillink_view", kwargs={"slug": self.slug})
 
-    @property
-    def link(self):
+    def link(self, first_name=None, last_name=None, address=None):
+
+        signature = ""
+        if first_name or last_name or address:
+            signature += "\n\n-"
+            if first_name and last_name:
+                signature += f"{first_name} {last_name}\n"
+            if address:
+                signature += f"{address}\n"
+
         _link = "mailto:"
         _link += quote(self.to)
         _link += "?"
         params = {}
         if self.cc is not None:
             params["cc"] = self.cc
+        if self.bcc is not None:
+            params["bcc"] = self.bcc
         params["subject"] = self.subject
-        params["body"] = self.body
+        params["body"] = self.body + signature
         _link += urlencode(params, quote_via=quote)
         return _link

@@ -1,4 +1,4 @@
-% extends "base.html" %}
+{% extends "base.html" %}
 {% load wagtailuserbar %}
 
 {% load static %}
@@ -6,21 +6,20 @@
 
 {% block body_class %}template-cmspage{% endblock %}
 
-{% block title %}
-    - {{ page.title }}
-{% endblock %}
-
 {% block content %}
-    {% wagtailuserbar %}
+  {% wagtailuserbar %}
+  <div class="cms-content">
     <div class="cms-title">
-      <h2>{{ page.title }}</h2>
+      <h1>{{ page.title }}</h1>
+    </div>
     <div class="cms-body">
       <div class="content-container">
-          <ul>
-          {% for page in self.get_children %}
+        <ul>
+        {% for page in self.get_children %}
           <li><a href="{{page.url}}">{{page.title}}</a>
-          {% endfor %}
-          </ul>
+        {% endfor %}
+        </ul>
       </div>
     </div>
+  </div>
 {% endblock %}

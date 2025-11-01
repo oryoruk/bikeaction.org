@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load i18n %}
+{% load i18n qr_code %}
 {% block header %}
 {% comment %}
 Do not show the header on signin page.
@@ -44,5 +44,11 @@ Do not show the footer on signin page.
     <br><br><small><i>By signing in, you agree to receive a follow-up email from PBA about this event.</i></small>
   </div>
   </form>
+</div>
+
+<div class="event-qr-container">
+  <a href="{% qr_url_from_text request.build_absolute_uri image_format='png' %}" download="qr-code-{{ event.slug }}-signin.png">
+    <img class="event-signin-qr-code" src="{% qr_url_from_text request.build_absolute_uri image_format='png' %}">
+  </a>
 </div>
 {% endblock %}

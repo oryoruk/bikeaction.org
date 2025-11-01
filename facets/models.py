@@ -23,6 +23,16 @@ class Facet(models.Model):
     def __str__(self):
         return self.name
 
+    def __lt__(self, other):
+        if other is None:
+            return False
+        return self.name < other.name
+
+    def __gt__(self, other):
+        if other is None:
+            return True
+        return self.name > other.name
+
 
 class District(Facet):
     targetable = models.BooleanField(default=True)

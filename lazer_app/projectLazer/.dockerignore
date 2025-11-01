@@ -1,0 +1,10 @@
+/.angular
+/.browserslistrc
+/.editorconfig
+/.gitignore
+/.tool-versions
+/.vscode
+/node_modules
+/www
+
+*.swp

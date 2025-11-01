@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Laser Vision Violation Submission</h1>
+
+<div class="pagination">
+  <div class="pagination-nav previous">
+    {% if page_obj.has_previous %}
+    <span><a href="?page=1"><i class='fa-solid fa-angles-left'></i> Latest</a></span>
+    <span><a href="?page={{ page_obj.previous_page_number }}"><i class="fa-solid fa-angle-left"></i> Newer Violations</a></span>
+    {% endif %}
+  </div>
+  <div class="pagination-nav next">
+    {% if page_obj.has_next %}
+    <span><a href="?page={{ page_obj.next_page_number }}">Past Violations <i class="fa-solid fa-angle-right"></i></a></span>
+    <span><a href="?page={{ page_obj.paginator.num_pages }}">Oldest <i class="fa-solid fa-angles-right"></i></a></span>
+    {% endif %}
+  </div>
+</div>
+<br>
+
+<div class="table-container">
+  <table>
+    <tr>
+      <th>Image</th>
+      <th>Violation</th>
+      <th>When</th>
+      <th>Where</th>
+    </tr>
+    {% for report in page_obj %}
+    <tr>
+      <td><img style="max-height: 100px" src="{{ report.submission.image.url }}"></img></td>
+      <td>{{ report.violation_observed_short }}</td>
+      <td>{{ report.date_observed }} {{ report.time_observed }}</td>
+      <td>{{ report.block_number }} {{ report.street_name }} {{ report.zip_code }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="pagination">
+  <div class="pagination-nav previous">
+    {% if page_obj.has_previous %}
+    <span><a href="?page=1"><i class='fa-solid fa-angles-left'></i> Latest</a></span>
+    <span><a href="?page={{ page_obj.previous_page_number }}"><i class="fa-solid fa-angle-left"></i> Newer Violations</a></span>
+    {% endif %}
+  </div>
+  <div class="pagination-nav next">
+    {% if page_obj.has_next %}
+    <span><a href="?page={{ page_obj.next_page_number }}">Past Violations <i class="fa-solid fa-angle-right"></i></a></span>
+    <span><a href="?page={{ page_obj.paginator.num_pages }}">Oldest <i class="fa-solid fa-angles-right"></i></a></span>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

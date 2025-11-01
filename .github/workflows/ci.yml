@@ -1,0 +1,146 @@
+---
+name: 'CI'
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        id: buildx
+
+      - name: Cache mount directory
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: |
+              var-cache-apt
+              var-lib-apt
+              root-npm
+              user-cache-pip
+          key: ${{ runner.os }}-cache-mount-${{ hashFiles('Dockerfile.dev') }}
+          restore-keys: |
+            ${{ runner.os }}-cache-mount-
+
+      - name: Restore Docker cache mounts
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          cache-dir: cache-mount
+          cache-map: |
+            {
+              "var-cache-apt": "/var/cache/apt",
+              "var-lib-apt": "/var/lib/apt",
+              "root-npm": "/root/.npm",
+              "user-cache-pip": "/home/user/.cache/pip"
+            }
+          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        env:
+          BUILDKIT_PROGRESS: plain
+        with:
+          context: .
+          file: Dockerfile.dev
+          push: false
+          load: true
+          tags: pbaabp:docker-compose
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            USER_ID=1000
+            GROUP_ID=1000
+
+      - name: Mark image as built
+        run: mkdir -p .state && touch .state/docker-build-base
+
+      - name: Run lint
+        run: make lint
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_PROGRESS: plain
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        id: buildx
+
+      - name: Cache mount directory
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: |
+              var-cache-apt
+              var-lib-apt
+              root-npm
+              user-cache-pip
+          key: ${{ runner.os }}-cache-mount-${{ hashFiles('Dockerfile.dev') }}
+          restore-keys: |
+            ${{ runner.os }}-cache-mount-
+
+      - name: Restore Docker cache mounts
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          cache-dir: cache-mount
+          cache-map: |
+            {
+              "var-cache-apt": "/var/cache/apt",
+              "var-lib-apt": "/var/lib/apt",
+              "root-npm": "/root/.npm",
+              "user-cache-pip": "/home/user/.cache/pip"
+            }
+          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
+
+      - name: Build PostGIS Docker image
+        uses: docker/build-push-action@v5
+        env:
+          BUILDKIT_PROGRESS: plain
+        with:
+          context: compose
+          file: compose/Dockerfile.postgis
+          push: false
+          load: true
+          tags: postgis:latest
+          cache-from: type=gha,scope=postgis
+          cache-to: type=gha,mode=max,scope=postgis
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        env:
+          BUILDKIT_PROGRESS: plain
+        with:
+          context: .
+          file: Dockerfile.dev
+          push: false
+          load: true
+          tags: pbaabp:docker-compose
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            USER_ID=1000
+            GROUP_ID=1000
+
+      - name: Mark image as built
+        run: mkdir -p .state && touch .state/docker-build-base
+
+      - name: Run tests
+        run: make test
+        env:
+          DOCKER_BUILDKIT: 1
+          BUILDKIT_PROGRESS: plain

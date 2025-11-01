@@ -7,45 +7,120 @@
 {% endblock %}
 
 {% block content %}
-<h1>{{ rco.name }}</h1>
+<div class="rco-container">
+  <h1>{{ rco.name }}</h1>
 
-<script>
-function map_init (map, options) {
-  var rcoExtent = L.geoJSON({{ rco.mpoly.json|safe }});
-  var group = new L.featureGroup([rcoExtent]);
-  map.addLayer(group);
-  map.fitBounds(group.getBounds());
+  {% if rco.targetable %}<p>This RCO has been identified as a primary RCO for residents in its bounds by PBA</p>{% endif %}
+  <p>The data on this page comes from the <a href="https://www.phila.gov/programs/registered-community-organizations-rcos/">City of Philadelphia</a>.</p>
 
-  function zipStyle(feature) {
-    return {
-      weight: 2,
-      opacity: 1,
-      color: 'black',
-      fillColor: 'grey',
-      filOpacity: .25
-    };
+  <div class="table-container">
+    <table>
+      <tr>
+        <th>Organization Type</th>
+        <td>{{ rco.properties.ORG_TYPE }}</td>
+      </tr>
+      <tr>
+        <th>Effective Date</th>
+        <td>{{ rco.properties.EFFECTIVE_DATE }}</td>
+      </tr>
+      <tr>
+        <th>Expiration Year</th>
+        <td>{{ rco.properties.EXPIRATIONYEAR }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <h2>Address</h2>
+  <p style="white-space: pre-wrap;">{{ rco.properties.ORGANIZATION_ADDRESS }}</p>
+
+  <h2>Contact{% if rco.properties.ALTERNATE_NAME %}s{% endif %}</h2>
+
+  <b>Preferred Contact Method:</b> {{ rco.properties.PREFFERED_CONTACT_METHOD }}
+
+  <h3>Primary</h3>
+  <div class="table-container">
+    <table>
+      <tr>
+        <th>Name</th>
+        <td>{{ rco.properties.PRIMARY_NAME }}</td>
+      </tr>
+      <tr>
+        <th>Email</th>
+        <td>{{ rco.properties.PRIMARY_EMAIL }}</td>
+      </tr>
+      <tr>
+        <th>Phone</th>
+        <td>{{ rco.properties.PRIMARY_PHONE }}{% if rco.properties.P_PHONE_EXT %} ext {{ rco.properties.P_PHONE_EXT }}{% endif %}</td>
+      </tr>
+      <tr>
+        <th>Address</th>
+        <td style="white-space: pre-wrap;">{{ rco.properties.PRIMARY_ADDRESS }}</td>
+      </tr>
+    </table>
+  </div>
+
+  {% if rco.properties.ALTERNATE_NAME %}
+  <h3>Alternate</h3>
+  <div class="table-container">
+    <table>
+      <tr>
+        <th>Name</th>
+        <td>{{ rco.properties.ALTERNATE_NAME }}</td>
+      </tr>
+      <tr>
+        <th>Email</th>
+        <td>{{ rco.properties.ALTERNATE_EMAIL }}</td>
+      </tr>
+      <tr>
+        <th>Phone</th>
+        <td>{{ rco.properties.ALTERNATE_PHONE }}{% if rco.properties.A_PHONE_EXT %} ext {{ rco.properties.A_PHONE_EXT }}{% endif %}</td>
+      </tr>
+      <tr>
+        <th>Address</th>
+        <td style="white-space: pre-wrap;">{{ rco.properties.ALTERNATE_ADDRESS }}</td>
+      </tr>
+    </table>
+  </div>
+  {% endif %}
+
+  <h2>Meeting Location(s)</h2>
+
+  <p style="white-space: pre-wrap;">{{ rco.properties.MEETING_LOCATION_ADDRESS }}</p>
+
+  <script>
+  function map_init (map, options) {
+    var rcoExtent = L.geoJSON({{ rco.mpoly.json|safe }});
+    var group = new L.featureGroup([rcoExtent]);
+    map.addLayer(group);
+    map.fitBounds(group.getBounds());
+    map.dragging.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.boxZoom.disable();
+    map.zoomControl.disable();
+    map.keyboard.disable();
+    document.getElementById('rco_boundaries').style.cursor='default';
   }
+  </script>
+  <h2>Map</h2>
 
-  {% for zip in rco.zips %}
-  var zip{{ zip.name }} = L.geoJSON({{ zip.mpoly.json|safe }}, {style: zipStyle});
-  zip{{ zip.name }}.bindTooltip("{{ zip.name }}", {permanent: true, direction: "center", className: "map-text-label", offset: [0, 0]});
-  map.addLayer(zip{{ zip.name }});
-  {% endfor %}
-}
-</script>
+  {% leaflet_map "rco_boundaries" callback="window.map_init" %}
 
-{% leaflet_map "rco_boundaries" callback="window.map_init" %}
-<br>
-<br>
-<div class="table-container">
-  <table>
-    {% for prop, value in rco.properties.items %}
-    <tr>
-      <th>{{ prop }}</th>
-      <td><pre>{{ value }}</pre></td>
-    </tr>
+  <h2>Raw Data</h2>
+
+  <details>
+    <summary>
+    Click to expand
+    </summary>
+    <pre>
+    {% for key, value in rco.properties.items %}
+{{ key }}
+{{ value }}
     {% endfor %}
-  </table>
+    </pre>
+  </details>
+
 </div>
 
 {% endblock %}

@@ -1,0 +1,86 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-icon
+        [style.display]="updateService.needsUpdate? '': 'none'"
+        color="success"
+        name="refresh-circle-outline"
+        size="large"
+      ></ion-icon>
+    </ion-buttons>
+    <ion-title>Laser Vision</ion-title>
+    <ion-buttons slot="end">
+      <ion-icon
+        class="onlineIndicator indicatorGreen"
+        [style.display]="onlineStatus.online? '': 'none'"
+        name="cloud"
+      ></ion-icon>
+      <ion-icon
+        class="onlineIndicator indicatorRed"
+        [style.display]="onlineStatus.online? 'none': ''"
+        name="cloud-offline"
+      ></ion-icon>
+      <ion-spinner
+        class="onlineIndicator"
+        [style.display]="(onlineStatus.online === null)? '': 'none'"
+        name="dots"
+      ></ion-spinner>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-text>
+    <h1>About Laser Vision</h1>
+  </ion-text>
+
+  <ion-text>
+    <p>
+      Laser Vision is a project of
+      <a href="https://bikeaction.org">Philly Bike Action!</a>, an all-volunteer
+      advocacy organization and registered 501(c)(4) nonprofit on a mission to
+      expand Philly's protected bike lane network and improve the experience of
+      riding a bike in Philadelphia.
+    </p>
+  </ion-text>
+
+  <ion-text>
+    <p>
+      Since our founding in April 2023, we have mobilized a grassroots movement
+      of civic engagement and direct action demanding safer designs for our city
+      streets.
+    </p>
+  </ion-text>
+
+  <ion-text>
+    <p>
+      Donations to Philly Bike Action help us promote safer and more effective
+      bicycle infrastructure for the people of Philadelphia. We believe everyone
+      deserves to be able to get around the city safely by bicycle, regardless
+      of ability or age, and nobody deserves to be harassed or threatened.
+    </p>
+  </ion-text>
+
+  <ion-text>
+    <p>
+      Your donation will help us cover recurring costs like meeting room rentals
+      and tech services (like this!), printing costs, and event materials.
+    </p>
+  </ion-text>
+
+  <div class="center">
+    <a href="https://bikeaction.org/donate/">
+      <ion-button> Support our Mission </ion-button>
+    </a>
+  </div>
+
+  <ion-text>
+    <p>
+      <b>Disclaimer</b>: Laser Vision is not endorsed by nor created in
+      collaboration with any government or outside party. PBA cannot guarantee
+      that reports submitted using Laser Vision will result in action by the
+      Philadelphia Parking Authority.
+    </p>
+  </ion-text>
+</ion-content>

@@ -1,4 +1,10 @@
-# Philly Bike Action Administration, Bridges, and Planning
+# apps.bikeaction.org
+
+This Django codebase is what powers [apps.bikeaction.org](https://apps.bikeaction.org)
+
+Aside from the Django web site, it also hosts our [discord bot](/pba_discord/bot.py)
+which is built with [interactions.py](https://interactions-py.github.io/interactions.py/).
+
 
 ## Getting Started
 
@@ -88,3 +94,10 @@ make clean
 ```
 
 Will completely destroy your local containers.
+
+## Deployment
+
+Deployments to [apps.bikeaction.org](https://apps.bikeaction.org) occur on merge to `main` branch.
+
+You can watch the progress of the deploy to our [dokku](https://dokku.com) instance
+in the GitHub Actions output.

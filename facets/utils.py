@@ -20,3 +20,19 @@ async def geocode_address(search_address):
     except Exception as err:
         sentry_sdk.capture_exception(err)
         raise
+
+
+async def reverse_geocode_point(search_point, exactly_one=True):
+    try:
+        if settings.GOOGLE_MAPS_API_KEY is not None:
+            async with GoogleV3(
+                api_key=settings.GOOGLE_MAPS_API_KEY, user_agent=UA, adapter_factory=AioHTTPAdapter
+            ) as geolocator:
+                address = await geolocator.reverse(search_point, exactly_one=exactly_one)
+        else:
+            async with Nominatim(user_agent=UA, adapter_factory=AioHTTPAdapter) as geolocator:
+                address = await geolocator.reverse(search_point, exactly_one=exactly_one)
+        return address
+    except Exception as err:
+        sentry_sdk.capture_exception(err)
+        raise

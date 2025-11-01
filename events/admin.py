@@ -17,6 +17,16 @@ class EventSignInAdmin(admin.ModelAdmin):
     list_filter = ["event__title", "council_district", "zip_code"]
     search_fields = ["first_name", "last_name", "email", "zip_code"]
     ordering = ["-updated_at"]
+    readonly_fields = [
+        "event",
+        "mailjet_contact_id",
+        "first_name",
+        "last_name",
+        "email",
+        "zip_code",
+        "council_district",
+        "newsletter_opt_in",
+    ]
 
     csvexport_selected_fields = [
         "first_name",
@@ -39,6 +49,7 @@ class EventRSVPAdmin(admin.ModelAdmin):
     list_display = ["get_name", "get_event"]
     list_filter = ["event__title"]
     search_fields = ["first_name", "last_name", "email"]
+    readonly_fields = ["event", "user", "first_name", "last_name", "email"]
 
     def get_name(self, obj):
         if obj.user is None:

@@ -4,7 +4,6 @@ import uuid
 
 import django.core.validators
 import django.db.models.deletion
-import multi_email_field.fields
 from django.db import migrations, models
 
 import pbaabp.models
@@ -32,11 +31,11 @@ class Migration(migrations.Migration):
                 ("send_email", models.BooleanField(default=False)),
                 (
                     "email_to",
-                    multi_email_field.fields.MultiEmailField(blank=True, default=[], null=True),
+                    models.TextField(blank=True, default=[], null=True),
                 ),
                 (
                     "email_cc",
-                    multi_email_field.fields.MultiEmailField(blank=True, default=[], null=True),
+                    models.TextField(blank=True, default=[], null=True),
                 ),
                 (
                     "signature_fields",

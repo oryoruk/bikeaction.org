@@ -1,0 +1,33 @@
+<div style="display: flex; justify-content: center; align-items: center; max-width: 100%; margin-left: 2em; margin-right: 2em; text-align: center;">
+  <span style="padding: 1em;"><img src="templates/email/protected-bike-lanes-posters/images/logo-PBA.png"        style="width: 100%; vertical-align: middle;"></span>
+  <span style="padding: 1em;"><img src="templates/email/protected-bike-lanes-posters/images/logo-5th-square.png" style="width: 100%; vertical-align: middle;"></span>
+  <span style="padding: 1em;"><img src="templates/email/protected-bike-lanes-posters/images/logo-BCGP.png"       style="width: 100%; vertical-align: middle;"></span>
+</div>
+
+*You are receiving this email from [Philly Bike Action](https://bikeaction.org/) because you signed our "[Safe Streets Now\!](https://bicyclecoalition.secure.nonprofitsoapbox.com/component/sbxpetitions/35)" petition or our “[Protect the Spruce and Pine Bike Lanes](https://www.5thsq.org/protect_spruce_pine)” petition in partnership with [The Bicycle Coalition of Greater Philadelphia](https://bicyclecoalition.org/) and [5th Square](https://www.5thsq.org/) and you live near Spruce and Pine Street.*
+
+<div style="display: flex; justify-content: center;">
+  <b style="font-size: larger;">Get a free “Protected Bike Lanes!” Window Poster!</b>
+</div>
+<div style="display: flex; justify-content: center; margin-top: 1em; margin-bottom: 1em; margin-left: 2em; margin-right: 2em; max-width: 90%;">
+  <img src="templates/email/protected-bike-lanes-posters/images/posters-collage.jpg"><br>
+</div>
+<div style="display: flex; justify-content: center;">
+  <span><i>Posters designed and printed by <a href="https://innerloop.press/">Innerloop Press</a></i></span>
+</div>
+
+If you **support protected bike lanes** and have a window above a sidewalk near Spruce or Pine Street, we'd like to get you a **free window poster**\!  We have a limited number of posters, so please only click the button below if you will display the poster in a window where other neighbors will see it.  **We want to show everyone there is strong support for protected bike lanes\!** 
+
+Posters are 11"x14" risograph prints and will be distributed to your home by Philly Bike Action volunteers in the coming weeks.
+
+<div style="display: flex; justify-content: center;">
+  <a class="submit-button" href="https://apps.bikeaction.org/campaigns/protected-bike-lanes-posters/">Get A Poster!</a>
+</div>
+
+Posters are also available for free at [Partners and Son](https://partnersandson.com/) and for sale at [Innerloop Press](https://www.store.innerloop.press/).
+
+Questions? Email [posters@bikeaction.org](mailto:posters@bikeaction.org)
+
+**Philly Bike Action** 
+
+**Want more from Philly Bike Action?** Join our [newsletter](https://bikeaction.org) or create a [PBA Account](https://apps.bikeaction.org/accounts/signup/) so we can let you know when important input opportunities like this happen in your neighborhood.

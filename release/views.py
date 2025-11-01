@@ -43,7 +43,9 @@ def release_signature(request, release_slug_or_id):
             if form.cleaned_data["newsletter_opt_in"]:
                 transaction.on_commit(
                     lambda: subscribe_to_newsletter.delay(
-                        form.instance.email, tags=["release-signature", f"release-{release.slug}"]
+                        form.instance.email,
+                        form.instance.nickname,
+                        tags=["release-signature", f"release-{release.slug}"],
                     )
                 )
 

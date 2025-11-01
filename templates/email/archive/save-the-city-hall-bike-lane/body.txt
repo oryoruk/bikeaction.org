@@ -1,0 +1,19 @@
+<small><i>Thank you for signing <a href="https://bikeaction.org/">our</a> <a href="https://bikeaction.org/campaigns/build-the-city-hall-bike-lane/">Build the City Hall Bike Lane petition</a>!</i></small>
+
+Hello {{ first_name }},
+
+The deadline to introduce the necessary legislation for the city hall bike lane is **10AM TODAY** \- but **Councilmember Jeffery Young is holding out**.
+
+**We need YOU to call** Council President Johnson to make sure the City Hall bike lane bill is introduced during today's City Council meeting. The consequence of not passing the legislation is 12 more years before we have another opportunity. 
+
+Council President Johnson \- **(215) 686-2070**
+
+**Script:** *I'm calling to ask the Council President to make sure Councilmember Young introduces the City Hall bike lane bill today. I'll be watching to see that Council does not miss this critical opportunity. I appreciate the Council President’s continued support for making Philadelphia streets safer.*
+
+Over 1,300 Philadelphians have signed in just a few days. Your efforts have gotten the support of the City Council President and the Mayor’s office\! Let’s get this over the line\!
+
+You can watch Council Council [live online](https://phlcouncil.com/watch-city-council/) at 10am to see if they introduce the bill.
+
+**Philly Bike Action** 
+
+**Want more from Philly Bike Action?** Join our [newsletter](https://bikeaction.org) or create a [PBA Account](https://apps.bikeaction.org/accounts/signup/) so we can let you know when important input opportunities like this one happen in your neighborhood.

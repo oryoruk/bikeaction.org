@@ -1,0 +1,11 @@
+{
+  "name": "projectLazer",
+  "integrations": {
+    "capacitor": {},
+    "cordova": {}
+  },
+  "type": "angular",
+  "hooks": {
+    "ionic:build:before": "./scripts/update-version.js"
+  }
+}

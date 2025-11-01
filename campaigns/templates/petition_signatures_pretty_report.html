@@ -1,0 +1,60 @@
+{% load static %}
+<html>
+  <head>
+    <style>
+      * {
+        font-family: Ubuntu;
+      }
+      table {
+        border-collapse: collapse;
+      }
+      .signature {
+        border: 1px solid grey;
+        border-radius: 1em;
+        break-inside: avoid-page;
+      }
+      .signer td {
+        padding: .5em;
+      }
+      .separator {
+        height: .5em;
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@100..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
+  </head>
+  <body>
+    <div style="display: flex; justify-content: center; align-items: center; max-width: 100%; margin-left: 2em; margin-right: 2em; text-align: center;">
+      <span style="padding: 1em; width: 33%;"><a href="https://bikeaction.org/"><img src="{% static 'images/pba-logo-pink.svg' %}"        style="width: 100%; vertical-align: middle;"></a></span>
+      <!--<span style="padding: 1em; width: 33%;"><a href="https://www.5thsq.org/"><img src="{% static 'images/logos/logo-5th-square.png' %}" style="width: 100%; vertical-align: middle;"></a></span>-->
+    </div>
+    {% for petition, signatures in petitions.items %}
+    <div>
+      <h1>{{ petition.title }}</h1>
+    </div>
+    <blockquote>{{ petition.letter }}</blockquote>
+    <hr>
+    <table>
+      {% for signature in signatures %}
+        {% if signature.district %}
+          <tbody class="signature">
+            <tr class="signer">
+              <td>{{ signature.first_name }} {{ signature.last_name }}</td>
+              <td>{{ signature.postal_address_line_1 }}, {{ signature.city }} {{ signature.state }} {{ signature.zip_code }}</td>
+            </tr>
+            {% if signature.comment and signature.visible %}
+            <tr class="comment">
+              <td colspan=2><blockquote>{{ signature.comment }}</blockquote></td>
+            </tr>
+            {% endif %}
+          </tbody>
+          {% if not forloop.last %}
+          <tr class="separator"></tr>
+          {% endif %}
+        {% endif %}
+      {% endfor %}
+    </table>
+    {% endfor %}
+  </body>
+</html>

@@ -1,0 +1,13 @@
+{% load wagtailimages_tags %}
+
+{% if value.card_count_description %}
+<div class="card-display-description">
+  <p>{{ images.count }} {{ value.card_count_description }}</p>
+</div>
+{% endif %}
+
+<div class="card-display-list">
+{% for image in images %}
+{% image image width-600 class="card-display-card" loading="lazy" decoding="async" %}
+{% endfor %}
+</div>

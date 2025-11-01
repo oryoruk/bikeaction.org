@@ -5,39 +5,27 @@ from django.contrib.auth.models import User
 from django.contrib.gis.db import models
 from django.core.validators import RegexValidator
 from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from facets.models import District as DistrictFacet
 from facets.models import (
     RegisteredCommunityOrganization as RegisteredCommunityOrganizationFacet,
 )
-from profiles.tasks import geocode_profile, sync_to_mailchimp
+from membership.models import Membership
+from organizers.models import OrganizerApplication
+from profiles.tasks import geocode_profile, sync_to_mailjet
 from projects.models import ProjectApplication
 
 
 class Profile(models.Model):
-    class District(models.IntegerChoices):
-        NO_DISTRICT = 0, _("N/A - I do not live in Philadelphia")
-        DISTRICT_1 = 1, _("District 1")
-        DISTRICT_2 = 2, _("District 2")
-        DISTRICT_3 = 3, _("District 3")
-        DISTRICT_4 = 4, _("District 4")
-        DISTRICT_5 = 5, _("District 5")
-        DISTRICT_6 = 6, _("District 6")
-        DISTRICT_7 = 7, _("District 7")
-        DISTRICT_8 = 8, _("District 8")
-        DISTRICT_9 = 9, _("District 9")
-        DISTRICT_10 = 10, _("District 10")
-
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    mailchimp_contact_id = models.CharField(max_length=64, null=True, blank=True)
+    mailjet_contact_id = models.BigIntegerField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, related_name="profile", on_delete=models.CASCADE)
 
-    council_district = models.IntegerField(
-        null=True, blank=True, choices=District.choices, verbose_name=_("Council District")
-    )
     street_address = models.CharField(
         max_length=256,
         null=True,
@@ -83,12 +71,230 @@ class Profile(models.Model):
                 if getattr(old_model, i, None) != getattr(self, i, None):
                     modified = True
             if modified:
-                transaction.on_commit(lambda: sync_to_mailchimp.delay(self.id))
+                transaction.on_commit(lambda: sync_to_mailjet.delay(self.id))
                 transaction.on_commit(lambda: geocode_profile.delay(self.id))
         else:
-            transaction.on_commit(lambda: sync_to_mailchimp.delay(self.id))
+            transaction.on_commit(lambda: sync_to_mailjet.delay(self.id))
             transaction.on_commit(lambda: geocode_profile.delay(self.id))
         super(Profile, self).save(*args, **kwargs)
+
+    def membership(self):
+        now = timezone.now().date()
+
+        # Check if there's an active Membership record
+        has_membership_record = (
+            Membership.objects.filter(
+                user=self.user,
+                start_date__lte=now,
+            )
+            .filter(Q(end_date__isnull=True) | Q(end_date__gte=now))
+            .exists()
+        )
+
+        if has_membership_record:
+            return True
+
+        # Otherwise check Discord activity or active subscription
+        return (
+            User.objects.filter(id=self.user.id)
+            .filter(
+                Q(
+                    Q(socialaccount__provider="discord")
+                    & Q(
+                        profile__discord_activity__date__gte=(
+                            timezone.now().date() - datetime.timedelta(days=30)
+                        )
+                    )
+                )
+                | Q(djstripe_customers__subscriptions__status__in=["active"])
+            )
+            .exists()
+        )
+
+    membership.boolean = True
+
+    def donor(self):
+        return (
+            User.objects.filter(id=self.user.id)
+            .filter(Q(djstripe_customers__subscriptions__status__in=["active"]))
+            .exists()
+        )
+
+    donor.boolean = True
+
+    def discord_active(self):
+        return (
+            User.objects.filter(id=self.user.id)
+            .filter(
+                Q(socialaccount__provider="discord")
+                & Q(
+                    profile__discord_activity__date__gte=(
+                        timezone.now().date() - datetime.timedelta(days=30)
+                    )
+                )
+            )
+            .exists()
+        )
+
+    discord_active.boolean = True
+
+    def discord_messages_last_30(self):
+        from django.db.models import Sum
+
+        thirty_days_ago = timezone.now().date() - datetime.timedelta(days=30)
+        total = self.discord_activity.filter(date__gte=thirty_days_ago).aggregate(
+            total=Sum("count")
+        )["total"]
+        return total or 0
+
+    def eligible_as_of(self, target_datetime):
+        """
+        Check if the user is eligible for membership at a specific datetime.
+        Returns a dict with detailed eligibility information.
+        """
+        from django.db.models import Max, Sum
+        from djstripe.models import Subscription
+
+        now = timezone.now()
+        target_date = (
+            target_datetime.date() if hasattr(target_datetime, "date") else target_datetime
+        )
+
+        # Check donor status
+        donor_status = "inactive"
+        donor_next_renewal = None
+        donor_sufficient_alone = False
+
+        subscriptions = Subscription.objects.filter(
+            customer__subscriber=self.user, status__in=["active", "trialing"]
+        ).order_by("-current_period_end")
+
+        if subscriptions.exists():
+            latest_sub = subscriptions.first()
+            # Check if subscription is active at target datetime
+            if (
+                latest_sub.current_period_end
+                and latest_sub.current_period_end.date() >= target_date
+            ):
+                donor_sufficient_alone = True
+                # Check if renewal is needed before target
+                if latest_sub.current_period_end.date() > now.date():
+                    if latest_sub.current_period_end.date() >= target_date:
+                        if now.date() < latest_sub.current_period_end.date() < target_date:
+                            donor_status = "active_renewal_required"
+                            donor_next_renewal = latest_sub.current_period_end
+                        else:
+                            donor_status = "active_stable"
+                else:
+                    donor_status = "expiring"
+
+        # Check Discord activity
+        discord_active = False
+        discord_last_activity = None
+        discord_sufficient_alone = False
+
+        # Check if Discord is connected
+        has_discord = self.user.socialaccount_set.filter(provider="discord").exists()
+
+        if has_discord:
+            # For target datetime, check activity in 30 days prior
+            thirty_days_before_target = target_date - datetime.timedelta(days=30)
+            activity_result = self.discord_activity.filter(
+                date__gte=thirty_days_before_target, date__lte=target_date
+            ).aggregate(total=Sum("count"), last_activity=Max("date"))
+
+            if activity_result["total"] and activity_result["total"] > 0:
+                discord_active = True
+                discord_last_activity = activity_result["last_activity"]
+                discord_sufficient_alone = True
+
+        # Check for Membership record
+        membership_sufficient_alone = (
+            Membership.objects.filter(
+                user=self.user,
+                start_date__lte=target_date,
+            )
+            .filter(Q(end_date__isnull=True) | Q(end_date__gte=target_date))
+            .exists()
+        )
+
+        # Determine overall eligibility
+        eligible = (
+            donor_sufficient_alone or discord_sufficient_alone or membership_sufficient_alone
+        )
+
+        # Generate warnings
+        warnings = []
+        at_risk = False
+
+        if eligible:
+            # Check for renewal risk
+            if donor_status == "active_renewal_required" and not discord_sufficient_alone:
+                warnings.append(
+                    f"Your donation renews on {donor_next_renewal.strftime('%b %d, %Y')} "
+                    "before the deadline - please ensure your payment method is current"
+                )
+                at_risk = True
+            elif donor_status == "active_renewal_required" and discord_sufficient_alone:
+                warnings.append(
+                    f"Your donation renews on {donor_next_renewal.strftime('%b %d, %Y')} "
+                    "before the deadline - you're also eligible via Discord activity as backup"
+                )
+
+            # Check for Discord activity aging risk
+            if discord_sufficient_alone and target_date > now.date():
+                # Calculate when current activity would age out
+                if discord_last_activity:
+                    activity_valid_until = discord_last_activity + datetime.timedelta(days=30)
+                    if activity_valid_until < target_date and not donor_sufficient_alone:
+                        days_needed = (target_date - datetime.timedelta(days=30)).strftime(
+                            "%b %d, %Y"
+                        )
+                        warnings.append(
+                            f"You'll need to post on Discord at least once after {days_needed} "
+                            "to maintain eligibility"
+                        )
+                        at_risk = True
+                    elif activity_valid_until < target_date and donor_sufficient_alone:
+                        days_needed = (target_date - datetime.timedelta(days=30)).strftime(
+                            "%b %d, %Y"
+                        )
+                        warnings.append(
+                            f"Your Discord activity will age out before the deadline - "
+                            f"post after {days_needed} to maintain backup eligibility, "
+                            "or you're covered by your active donation"
+                        )
+
+            # Single point of failure warnings (skip if they have a membership record)
+            if not membership_sufficient_alone:
+                if donor_sufficient_alone and not discord_sufficient_alone:
+                    if has_discord:
+                        warnings.append(
+                            "You're eligible via donation only - " "consider posting on Discord"
+                        )
+                    else:
+                        warnings.append(
+                            "You're eligible via donation only - " "consider connecting Discord"
+                        )
+                elif discord_sufficient_alone and not donor_sufficient_alone:
+                    warnings.append(
+                        "You're eligible via Discord activity only - "
+                        "consider becoming a recurring donor"
+                    )
+
+        return {
+            "eligible": eligible,
+            "donor": donor_sufficient_alone,
+            "donor_status": donor_status,
+            "donor_next_renewal": donor_next_renewal,
+            "discord_active": discord_active,
+            "discord_last_activity": discord_last_activity,
+            "discord_sufficient_alone": discord_sufficient_alone,
+            "donor_sufficient_alone": donor_sufficient_alone,
+            "membership_sufficient_alone": membership_sufficient_alone,
+            "warnings": warnings,
+            "at_risk": at_risk,
+        }
 
     @property
     def complete(self):
@@ -105,6 +311,14 @@ class Profile(models.Model):
     @property
     def project_applications(self):
         return ProjectApplication.objects.filter(submitter=self.user, draft=False).all()
+
+    @property
+    def organizer_application_draft(self):
+        return OrganizerApplication.objects.filter(submitter=self.user, draft=True).all()
+
+    @property
+    def organizer_application(self):
+        return OrganizerApplication.objects.filter(submitter=self.user, draft=False).all()
 
     @property
     def district(self):
@@ -175,7 +389,42 @@ class Profile(models.Model):
         return f"{self.user.first_name} {self.user.last_name} - {self.user.email}"
 
 
+class DiscordActivity(models.Model):
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name="discord_activity")
+    date = models.DateField()
+    count = models.IntegerField()
+
+    class Meta:
+        indexes = [models.Index(fields=["profile", "date"])]
+
+
+class DoNotEmail(models.Model):
+    """
+    Model to track email addresses that should not be contacted.
+    Used for users who deleted their accounts or explicitly opted out.
+    """
+
+    class Reason(models.TextChoices):
+        ACCOUNT_DELETION = "account_deletion", "Account Deletion"
+        KNOWN_OPPONENT = "known_opponent", "Known Opponent"
+
+    email = models.EmailField(unique=True)
+    reason = models.CharField(max_length=50, choices=Reason.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.email} ({self.get_reason_display()})"
+
+    class Meta:
+        verbose_name = "Do Not Email"
+        verbose_name_plural = "Do Not Email"
+
+
 class ShirtOrder(models.Model):
+    class ProductType(models.IntegerChoices):
+        T_SHIRT = 0, "T-Shirt"
+        SWEATSHIRT = 1, "Sweatshirt"
+
     class Fit(models.IntegerChoices):
         # ALTERNATIVE_01070C = 0, 'Unisex Classic Fit - "Go-To T-Shirt"'
         # ALTERNATIVE_5114C1 = (
@@ -184,6 +433,7 @@ class ShirtOrder(models.Model):
         # )
         NEXT_LEVEL_3600 = 2, 'Unisex Classic Fit - "Next Level - Cotton T-Shirt - 3600"'
         NEXT_LEVEL_1580 = 3, "Women's Relaxed Fit - \"Next Level - Women's Ideal Crop Top - 1580\""
+        GILDAN_G180 = 4, 'Unisex Classic Fit - "Gildan G180 - Heavy Blend Crewneck Sweatshirt"'
 
     class Size(models.IntegerChoices):
         XS = -2, "XS"
@@ -217,6 +467,9 @@ class ShirtOrder(models.Model):
         max_length=32, null=True, blank=True, choices=ShippingMethod.choices
     )
 
+    product_type = models.IntegerField(
+        null=False, blank=False, choices=ProductType.choices, default=ProductType.T_SHIRT
+    )
     fit = models.IntegerField(null=False, blank=False, choices=Fit.choices)
     size = models.IntegerField(null=False, blank=False, choices=Size.choices)
     print_color = models.IntegerField(null=False, blank=False, choices=PrintColor.choices)

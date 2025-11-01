@@ -1,4 +1,5 @@
-celerybeat-schedule*
+/celerybeat-*
+/abp.sql
 db.sqlite3
 venv
 .env
@@ -7,3 +8,8 @@ venv
 *.swp
 __pycache__
 /staticfiles
+.DS_Store
+/pull-prod-dump
+/load-prod-dump
+/ngrok.yml
+/media

@@ -1,0 +1,96 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-icon
+        [style.display]="updateService.needsUpdate? '': 'none'"
+        color="success"
+        name="refresh-circle-outline"
+        size="large"
+      ></ion-icon>
+    </ion-buttons>
+    <ion-title>Laser Vision</ion-title>
+    <ion-buttons slot="end">
+      <ion-icon
+        class="onlineIndicator indicatorGreen"
+        [style.display]="onlineStatus.online? '': 'none'"
+        name="cloud"
+      ></ion-icon>
+      <ion-icon
+        class="onlineIndicator indicatorRed"
+        [style.display]="onlineStatus.online? 'none': ''"
+        name="cloud-offline"
+      ></ion-icon>
+      <ion-spinner
+        class="onlineIndicator"
+        [style.display]="(onlineStatus.online === null)? '': 'none'"
+        name="dots"
+      ></ion-spinner>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <div style="width: 100%; text-align: center; padding-top: 1em">
+    <ion-text
+      >Your 20 most recent scans are stored. Tap an image to view details,
+      process, or submit</ion-text
+    >
+  </div>
+  <ion-card
+    *ngFor="let violation of sortViolations(); trackBy: trackViolations"
+  >
+    <ion-card-header>
+      <ion-card-title
+        >Violation - {{ (!violation.processed && !violation.submitted) ?
+        'Pending' : (violation.processed && !violation.submitted) ? 'Processed'
+        : 'Submitted' }}</ion-card-title
+      >
+      <ion-card-subtitle
+        ><div *ngIf="violation.violationType">
+          {{ violation.violationType.split("(")[0] }}
+        </div>
+        <div *ngIf="violation.address">{{ violation.address }}</div>
+        <div>{{ violation.time | date : "medium" }}</div></ion-card-subtitle
+      >
+    </ion-card-header>
+    <a
+      [routerLink]="['/violation-detail']"
+      [queryParams]="{violationId: violation.id}"
+      style="width: 100%; text-align: center"
+    >
+      <ion-img
+        alt=""
+        class="violationImg"
+        style="margin: 0 auto; width: 50vw; min-width: 50vw; min-height: 30vh"
+        [src]="getThumb(violation) | renderImage | async"
+      ></ion-img>
+    </a>
+    <ion-toolbar style="margin-top: 1em">
+      <ion-buttons slot="start">
+        <ion-button
+          fill="solid"
+          color="secondary"
+          (click)="saveImage(violation.id)"
+          ><ion-icon slot="start" name="save-outline"></ion-icon> Save
+          Image</ion-button
+        >
+      </ion-buttons>
+      <ion-buttons slot="end">
+        <ion-button
+          id="delete-violation-{{ violation.id }}"
+          fill="solid"
+          color="danger"
+          ><ion-icon slot="start" name="trash-outline"></ion-icon>
+          Delete</ion-button
+        >
+      </ion-buttons>
+      <ion-alert
+        trigger="delete-violation-{{ violation.id }}"
+        header="Are you sure?"
+        message="This will remove the image and all violation data, if it has not yet been processed or submitted nothing will be recoverable"
+        [buttons]="actionButtons(violation.id)"
+      ></ion-alert>
+    </ion-toolbar>
+  </ion-card>
+</ion-content>

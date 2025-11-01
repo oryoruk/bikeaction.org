@@ -1,0 +1,103 @@
+<ion-app>
+  <ion-split-pane contentId="main-content">
+    <ion-menu contentId="main-content">
+      <ion-content>
+        <ion-list lines="none">
+          <ion-list-header>Laser Vision</ion-list-header>
+
+          <ion-menu-toggle autoHide="false">
+            <ion-item
+              routerLink="/home"
+              routerLinkActive="active"
+              routerDirection="root"
+              detail="false"
+            >
+              <ion-icon slot="start" name="camera-outline"></ion-icon>
+              <ion-label>Violation Capture</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle autoHide="false">
+            <ion-item
+              routerLink="/history"
+              routerLinkActive="active"
+              routerDirection="root"
+              detail="false"
+            >
+              <ion-icon slot="start" name="list-outline"></ion-icon>
+              <ion-label>History</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle autoHide="false">
+            <ion-item
+              routerLink="/login"
+              routerLinkActive="active"
+              routerDirection="root"
+              detail="false"
+              [style.display]="accountService.loggedIn === true ? 'none' : ''"
+            >
+              <ion-icon slot="start" name="person-circle-outline"></ion-icon>
+              <ion-label>Log In</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle>
+            <ion-item
+              routerLink="/account"
+              routerLinkActive="active"
+              routerLinkActive="active"
+              routerDirection="root"
+              detail="false"
+              [style.display]="accountService.loggedIn === true ? '' : 'none'"
+            >
+              <ion-icon slot="start" name="person-circle"></ion-icon>
+              <ion-label>Account</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-menu-toggle>
+            <ion-item
+              routerLink="/about"
+              routerLinkActive="active"
+              routerLinkActive="active"
+              routerDirection="root"
+              detail="false"
+            >
+              <ion-icon slot="start" name="help-circle-outline"></ion-icon>
+              <ion-label>About</ion-label>
+            </ion-item>
+          </ion-menu-toggle>
+
+          <ion-item
+            [style.display]="updateService.needsUpdate ? '' : 'none'"
+            (click)="updateService.applyUpdate()"
+            class="plausible-event-name=App+Update"
+          >
+            <ion-icon
+              color="success"
+              name="refresh-circle-outline"
+              slot="start"
+            ></ion-icon>
+            <ion-label>Update App</ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-content>
+      <ion-footer>
+        <div class="ion-padding ion-text-center">
+          <ion-text class="ion-padding"
+            >Version:
+            {{
+              versionService.getBuildDate() | date: "yyyy-MM-dd HH:mm:ss"
+            }}</ion-text
+          >
+        </div>
+      </ion-footer>
+    </ion-menu>
+
+    <ion-router-outlet
+      [swipeGesture]="false"
+      id="main-content"
+    ></ion-router-outlet>
+  </ion-split-pane>
+</ion-app>

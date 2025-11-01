@@ -1,0 +1,195 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-icon
+        [style.display]="updateService.needsUpdate? '': 'none'"
+        color="success"
+        name="refresh-circle-outline"
+        size="large"
+      ></ion-icon>
+    </ion-buttons>
+    <ion-title>Laser Vision</ion-title>
+    <ion-buttons slot="end">
+      <ion-icon
+        class="onlineIndicator indicatorGreen"
+        [style.display]="onlineStatus.online? '': 'none'"
+        name="cloud"
+      ></ion-icon>
+      <ion-icon
+        class="onlineIndicator indicatorRed"
+        [style.display]="onlineStatus.online? 'none': ''"
+        name="cloud-offline"
+      ></ion-icon>
+      <ion-spinner
+        class="onlineIndicator"
+        [style.display]="(onlineStatus.online === null)? '': 'none'"
+        name="dots"
+      ></ion-spinner>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-card *ngIf="violationData">
+    <ion-card-header>
+      <ion-card-title
+        >Violation - {{ (!violationData.processed && !violationData.submitted) ?
+        'Pending' : (violationData.processed && !violationData.submitted) ?
+        'Processed' : 'Submitted' }}
+        <ion-button
+          size="small"
+          color="medium"
+          class="ion-float-right"
+          id="open-advanced-modal"
+          class="plausible-event-name=Violation+Advanced+Open"
+          ><ion-icon name="cog-outline"></ion-icon
+        ></ion-button>
+        <ion-popover
+          trigger="open-advanced-modal"
+          dismiss-on-select="true"
+          triggerAction="click"
+        >
+          <ng-template>
+            <ion-content class="ion-padding">
+              <ion-item *ngIf="!violationData.submitted">
+                <ion-button
+                  fill="solid"
+                  color="warning"
+                  size="regular"
+                  (click)="reprocess()"
+                  *ngIf="violationData.processed"
+                  class="plausible-event-name=Violation+Advanced+Reprocess"
+                >
+                  Reprocess
+                </ion-button>
+              </ion-item>
+            </ion-content>
+          </ng-template>
+        </ion-popover>
+      </ion-card-title>
+      <ion-card-subtitle>
+        <div *ngIf="violationData.violationType">
+          {{ violationData.violationType.split("(")[0] }}
+        </div>
+        <div>{{ violationData.time | date : "medium" }}</div>
+        <div *ngIf="violationData.address">{{ violationData.address }}</div>
+        <div *ngIf="!violationData.address">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="auto">
+                <ion-icon name="pin-outline"></ion-icon>
+              </ion-col>
+              <ion-col size="auto">
+                <span>
+                  {{ violationData.position.coords.latitude }}<br />
+                  {{ violationData.position.coords.longitude }}<br />
+                  {{ violationData.position.coords.accuracy }}
+                </span>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </div>
+      </ion-card-subtitle>
+    </ion-card-header>
+    <div style="width: 100%; text-align: center">
+      <div id="imageContainer">
+        <ion-img
+          id="imagePreview"
+          style="max-width: 50vw; margin: 0 auto"
+          [src]="violationData!.image | renderImage | async"
+          (ionImgDidLoad)="drawHitBoxes()"
+          lazy="true"
+        />
+      </div>
+    </div>
+    <ion-card-content>
+      <ion-grid>
+        <div *ngIf="violationData.vehicle">
+          <ion-row>
+            <ion-col>Make</ion-col>
+            <ion-col>Model</ion-col>
+            <ion-col>Color</ion-col>
+          </ion-row>
+          <ion-row *ngIf="violationData.vehicle">
+            <ion-col
+              ><b
+                >{{ violationData.vehicle!.vehicle?.props?.make_model[0].make
+                }}</b
+              ></ion-col
+            >
+            <ion-col
+              ><b
+                >{{ violationData.vehicle!.vehicle?.props?.make_model[0].model
+                }}</b
+              ></ion-col
+            >
+            <ion-col
+              ><b
+                >{{ violationData.vehicle!.vehicle?.props?.color[0].value }}</b
+              ></ion-col
+            >
+          </ion-row>
+          <ion-row *ngIf="violationData.vehicle?.plate">
+            <ion-col size="auto">Plate</ion-col>
+            <ion-col>
+              <b>
+                {{ violationData.vehicle!.plate?.props?.region[0]?.value }} {{
+                violationData.vehicle!.plate?.props?.plate[0]?.value.toUpperCase()
+                }}
+              </b>
+            </ion-col>
+          </ion-row>
+        </div>
+      </ion-grid>
+      <div class="ion-text-center">
+        <ion-text
+          *ngIf="violationData.processed && !violationData.vehicle && violationData.raw.vehicles.length > 0"
+          ><b>Select vehicle in violation!</b></ion-text
+        >
+        <ion-text
+          *ngIf="violationData.processed && !violationData.vehicle && violationData.raw.vehicles.length === 0"
+          ><b
+            >No vehicles recognized. Try zooming in or better lighting.</b
+          ></ion-text
+        >
+      </div>
+      <ion-button
+        expand="block"
+        (click)="submit()"
+        *ngIf="(!violationData.processed && !violationData.submitted) && this.onlineStatus.online && this.accountService.loggedIn"
+        class="plausible-event-name=Start+Violation+Process"
+        ><ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+        Process</ion-button
+      >
+      <ion-button
+        expand="block"
+        (click)="openAddressModal()"
+        *ngIf="(violationData.processed && violationData.vehicle && !violationData.submitted) && violationData.submissionId && this.onlineStatus.online && this.accountService.loggedIn"
+        class="plausible-event-name=Start+Violation+Submit"
+        ><ion-icon name="ticket-outline" slot="start"></ion-icon> Submit to
+        PPA</ion-button
+      >
+      <div *ngIf="!this.accountService.loggedIn">
+        <ion-text>
+          You need to sign in with your bikeaction.org account in order to
+          continue.
+        </ion-text>
+        <div>
+          <ion-button [routerLink]="['/login']" [queryParams]="{next: location}"
+            >Log In</ion-button
+          >
+        </div>
+      </div>
+      <ion-text *ngIf="!this.onlineStatus.online"
+        >You're currently offline! Don't fear though! Your captures can be
+        processed and submitted when you're back online.
+      </ion-text>
+      <ion-text *ngIf="violationData.processed && !violationData.submissionId"
+        >Captures from the beta testing period cannot be submitted without
+        reprocessing, see the
+        <ion-icon name="cog-outline"></ion-icon> above</ion-text
+      >
+    </ion-card-content>
+  </ion-card>
+</ion-content>

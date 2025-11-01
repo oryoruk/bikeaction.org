@@ -1,0 +1,10 @@
+{% load wagtailimages_tags %}
+<div class="homepage-block-card-container homepage-block-card-container-text-{{ value.image_side }}">
+  <div class="homepage-block-card-titles">
+    <div class="homepage-block-card-titles-title">{{ value.title}}</div>
+    <div class="homepage-block-card-titles-subtitle">{{ value.subtitle }}</div>
+  </div>
+  <div class="homepage-block-card-text">
+    {{ value.text }}
+  </div>
+</div>

@@ -1,4 +1,5 @@
-version: "3.9"
+volumes:
+  lazer:
 
 services:
   postgres:
@@ -38,14 +39,17 @@ services:
       DJANGO_EMAIL_PORT: 1025
       DJANGO_EMAIL_USE_TLS: "False"
       DJANGO_DEFAULT_FROM_EMAIL: "Philly Bike Action <pba@example.com>"
-    volumes: &base_volumes
-      - .:/code
+    volumes:
+      - &base_volumes
+        .:/code
 
   web:
     image: pbaabp:docker-compose
     command: python manage.py runserver 0.0.0.0:8000
     environment: *base_environment
-    volumes: *base_volumes
+    volumes:
+      - *base_volumes
+      - lazer:/code/static/lazer
     ports:
       - "8000:8000"
     depends_on:
@@ -54,11 +58,22 @@ services:
       postgres:
         condition: service_healthy
 
+  lazer:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+      target: lazer
+    command: npx ionic build --baseHref='/laser' --prod --watch
+    volumes:
+      - *base_volumes
+      - lazer:/code/lazer_app/projectLazer/www
+
   worker:
     image: pbaabp:docker-compose
     command: hupper -m celery -A pbaabp worker --beat -l DEBUG
     environment: *base_environment
-    volumes: *base_volumes
+    volumes:
+      - *base_volumes
     depends_on:
       redis:
         condition: service_healthy
@@ -69,7 +84,8 @@ services:
     image: pbaabp:docker-compose
     command: python manage.py run_dev_discord
     environment: *base_environment
-    volumes: *base_volumes
+    volumes:
+      - *base_volumes
     stop_signal: SIGINT
     depends_on:
       redis:

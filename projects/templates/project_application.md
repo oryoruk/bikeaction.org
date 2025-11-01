@@ -1,7 +1,9 @@
-# {{ application.data.shortname.value|safe }}
+{% load bleach_tags %}
+# {{ application.data.shortname.value|bleach }}
 
+**Quick Summary**:
 ```
-{{ application.data.quick_summary.value|safe }}
+{{ application.data.quick_summary.value|bleach }}
 ```
 
 ## Leader
@@ -23,83 +25,83 @@
 
 **Past Experience**:
 ```
-{{ application.data.leader_past_experience.value|safe }}
+{{ application.data.leader_past_experience.value|bleach }}
 ```
 
 ## Overview
 
-**{{ application.data.mission_relevance.label|safe }}**:
+**{{ application.data.mission_relevance.label|bleach }}**:
 ```
-{{ application.data.mission_relevance.value|safe }}
-```
-
-**{{ application.data.success_criteria.label|safe }}**:
-```
-{{ application.data.success_criteria.value|safe }}
+{{ application.data.mission_relevance.value|bleach }}
 ```
 
-**{{ application.data.name_use.label|safe }}**:
+**{{ application.data.success_criteria.label|bleach }}**:
 ```
-{{ application.data.name_use.value|safe }}
-```
-
-**{{ application.data.recruitment.label|safe }}**:
-```
-{{ application.data.recruitment.value|safe }}
+{{ application.data.success_criteria.value|bleach }}
 ```
 
-**{{ application.data.external_orgs.label|safe }}**:
+**{{ application.data.name_use.label|bleach }}**:
 ```
-{{ application.data.external_orgs.value|safe }}
+{{ application.data.name_use.value|bleach }}
+```
+
+**{{ application.data.recruitment.label|bleach }}**:
+```
+{{ application.data.recruitment.value|bleach }}
+```
+
+**{{ application.data.external_orgs.label|bleach }}**:
+```
+{{ application.data.external_orgs.value|bleach }}
 ```
 
 ## Logistics
 
-**{{ application.data.location.label|safe }}**:
+**{{ application.data.location.label|bleach }}**:
 ```
-{% if application.data.location.value %}{{ application.data.location.value|safe }}{% else %}no response{% endif %}
-```
-
-**{{ application.data.time_and_date.label|safe }}**:
-```
-{% if application.data.time_and_date.value %}{{ application.data.time_and_date.value|safe }}{% else %}no response{% endif %}
+{% if application.data.location.value %}{{ application.data.location.value|bleach }}{% else %}no response{% endif %}
 ```
 
-**{{ application.data.recurring.label|safe }}**:
+**{{ application.data.time_and_date.label|bleach }}**:
 ```
-{% if application.data.recurring.value %}{{ application.data.recurring.value|safe }}{% else %}no response{% endif %}
+{% if application.data.time_and_date.value %}{{ application.data.time_and_date.value|bleach }}{% else %}no response{% endif %}
+```
+
+**{{ application.data.recurring.label|bleach }}**:
+```
+{% if application.data.recurring.value %}Yes{% else %}No{% endif %}
 ```
 
 ## Resources
 
-**{{ application.data.equipment_needed.label|safe }}**:
+**{{ application.data.equipment_needed.label|bleach }}**:
 ```
-{{ application.data.equipment_needed.value|safe }}
-```
-
-**{{ application.data.volunteers_needed.label|safe }}**:
-```
-{{ application.data.volunteers_needed.value|safe }}
+{{ application.data.equipment_needed.value|bleach }}
 ```
 
-**{{ application.data.promotion_needed.label|safe }}**:
+**{{ application.data.volunteers_needed.label|bleach }}**:
 ```
-{{ application.data.promotion_needed.value|safe }}
-```
-
-**{{ application.data.finances_needed.label|safe }}**:
-```
-{{ application.data.finances_needed.value|safe }}
+{{ application.data.volunteers_needed.value|bleach }}
 ```
 
-**{{ application.data.others_needed.label|safe }}**:
+**{{ application.data.promotion_needed.label|bleach }}**:
 ```
-{% if application.data.others_needed.value %}{{ application.data.others_needed.value|safe }}{% else %}no response{% endif %}
+{{ application.data.promotion_needed.value|bleach }}
+```
+
+**{{ application.data.finances_needed.label|bleach }}**:
+```
+{{ application.data.finances_needed.value|bleach }}
+```
+
+**{{ application.data.others_needed.label|bleach }}**:
+```
+{% if application.data.others_needed.value %}{{ application.data.others_needed.value|bleach }}{% else %}no response{% endif %}
 ```
 
 ## Anything Else
 
-**{{ application.data.anything_else.label|safe }}**:
+**{{ application.data.anything_else.label|bleach }}**:
 ```
-{% if application.data.anything_else.value %}{{ application.data.anything_else.value|safe }}{% else %}no response{% endif %}
+{% if application.data.anything_else.value %}{{ application.data.anything_else.value|bleach }}{% else %}no response{% endif %}
 ```

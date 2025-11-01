@@ -1,0 +1,28 @@
+body {
+  overscroll-behavior-x: none;
+}
+
+ion-avatar {
+  --border-radius: 4px;
+}
+
+.onlineIndicator {
+  margin-right: 1em;
+}
+
+.indicatorGreen {
+  color: #90ee90;
+}
+
+.indicatorRed {
+  color: #ff5733;
+}
+
+:root {
+  --ion-color-primary: #64d246ff;
+  --ion-color-primary-rgb: 100, 210, 70;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #4ab92dff;
+  --ion-color-primary-tint: #96e184ff;
+}

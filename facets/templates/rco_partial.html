@@ -4,14 +4,23 @@
 
 <h2>Your RCO{% if RCOS|length > 1 %}s{% endif %}</h2>
 
+<small>Click for details!</small>
+
 <ul>
 {% for rco in RCOS %}
-  <li>{{ rco.ORGANIZATION_NAME }}</li>
+  {% if rco.targetable %}
+  <li><a href="{% url 'rco_detail' rco_id=rco.id %}"><b>{{ rco.name }}</b></a></li>
+  {% endif %}
+{% endfor %}
+{% for rco in RCOS %}
+  {% if not rco.targetable %}
+  <li><a href="{% url 'rco_detail' rco_id=rco.id %}">{{ rco.name }}</a></li>
+  {% endif %}
 {% endfor %}
 </ul>
 
 {% if RCOS|length > 1 %}
-<p><small><i>You have multiple RCOs! Most <i>often</i> the first listed RCO is the primary one for your address</i></small></p>
+<p><small><i>You have multiple RCOs! <b>Bolded</b> RCOs are your primary RCO. If there is no bolded RCO, it is <i>often</i> the first one listed for your address</i></small></p>
 {% endif %}
 
 {% if OTHER|length > 0 or WARDS|length > 0 %}
@@ -22,7 +31,7 @@
 <p>Other entities registered as RCOs:</p>
 <ul>
 {% for rco in OTHER %}
-  <li>{{ rco.ORGANIZATION_NAME }} (<i>{{ rco.ORG_TYPE }} </i>)</li>
+  <li><a href="{% url 'rco_detail' rco_id=rco.id %}">{{ rco.name }} (<i>{{ rco.properties.ORG_TYPE }} </i>)</a></li>
 {% endfor %}
 </ul>
 {% endif %}
@@ -31,7 +40,7 @@
 <p>Partisan political wards registered as RCOs:</p>
 <ul>
 {% for rco in WARDS %}
-  <li>{{ rco.ORGANIZATION_NAME }} (<i>{{ rco.ORG_TYPE }} </i>)</li>
+  <li><a href="{% url 'rco_detail' rco_id=rco.id %}">{{ rco.name }} (<i>{{ rco.properties.ORG_TYPE }} </i>)</a></li>
 {% endfor %}
 </ul>
 {% endif %}
@@ -39,7 +48,7 @@
 {% if DISTRICT %}
 <hr>
 
-<h2>You are in <u>District {{ DISTRICT }}</u></h2>
+<h2>You are in <u>{{ DISTRICT }}</u></h2>
 
 {% endif %}
 {% if POLLING_PLACE %}
@@ -54,15 +63,19 @@
 <div id="rcomap" style="height: 40vh; width: 100%; z-index: 1;">
 </div>
 <script>
-  var map = L.map('rcomap').setView([{{ address_lat }}, {{ address_long }}], 13);
+  var map = L.map('rcomap').setView([{{ address_lat }}, {{ address_long }}], 14);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
   }).addTo(map);
   var poppup = L.marker([{{ address_lat }}, {{ address_long }}]).addTo(map);
-  L.geoJSON({{ DISTRICT_GEOJSON }}, {style: {color: '#111111'}}).bindTooltip(function (layer) {return 'District ' + layer.feature.properties.DISTRICT}, {permanent: true, opacity: 0.7}).openTooltip().addTo(map);
-  {% for rco in RCOS_GEOJSON %}
-  L.geoJSON({{ rco }}).bindTooltip(function (layer) {return layer.feature.properties.ORGANIZATION_NAME}, {permanent: true, opacity: 0.7}).openTooltip().addTo(map);
+  L.geoJSON({{ DISTRICT_GEOJSON }}, {style: {color: '#111111'}}).bindTooltip(function (layer) {return "{{ DISTRICT }}"}, {permanent: true, opacity: 0.7}).openTooltip().addTo(map);
+  {% if primary_rco %}
+  L.geoJSON({{ primary_rco.mpoly.geojson|safe }}).bindTooltip(function (layer) {return '{{ primary_rco.name }}'}, {permanent: true, opacity: 0.7}).openTooltip().addTo(map);
+  {% else %}
+  {% for rco in RCOS %}
+  L.geoJSON({{ rco.mpoly.geojson|safe }}).bindTooltip(function (layer) {return '{{ rco.name }}'}, {permanent: true, opacity: 0.7}).openTooltip().addTo(map);
   {% endfor %}
+  {% endif %}
 </script>
 {% endif %}

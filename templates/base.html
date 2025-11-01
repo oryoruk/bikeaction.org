@@ -1,4 +1,4 @@
-{% load django_htmx sitetree static i18n %}
+{% load django_htmx sitetree static i18n wagtailimages_tags %}
 {% get_current_language as LANGUAGE_CODE %}
 <!DOCTYPE html>
 <html lang="en">
@@ -9,112 +9,151 @@
     <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@100..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" type="text/css" href="{% static 'css/pba.css' %}">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="{% static 'fontawesome/css/fontawesome.min.css' %}" rel="stylesheet" />
+    <link href="{% static 'fontawesome/css/brands.min.css' %}" rel="stylesheet" />
+    <link href="{% static 'fontawesome/css/solid.min.css' %}" rel="stylesheet" />
+    <link href="{% static 'fontawesome/css/regular.min.css' %}" rel="stylesheet" />
 
-    <script defer data-domain="apps.bikeaction.org" src="https://plausible.io/js/script.js"></script>
-    <script src="https://unpkg.com/boxicons@2.1.4/dist/boxicons.js"></script>
-    {% block title %}
-    <title>{% translate "Philly Bike Action!" %}</title>
+    <title>{% block title %}{% if page.title %}{{ page.title }}{% else %}{% translate "Philly Bike Action!" %}{% endif %}{% endblock %}</title>
+
+    {% block opengraph %}
+    <meta name="description" content="{% block description %}{% if page.search_description %}{{ page.search_description }}{% else %}Join the Action!{% endif %}{% endblock %}">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{% block og_title %}{% if page.seo_title %}{{ page.seo_title }}{% else %}{% if page.title %}{{ page.title }}{% else %}{% translate "Philly Bike Action!" %}{% endif %}{% endif %}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{% if page.search_description %}{{ page.search_description }}{% else %}Join the Action!{% endif %}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% if page.og_image %}{% image page.og_image original as tmp_photo %}{{ tmp_photo.full_url }}{% else %}{% static 'images/og.png' %}{% endif %}{% endblock %}">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta property="twitter:domain" content="{{ request.http.host }}">
+    <meta name="twitter:title" content="{% block twitter_title %}{% if page.seo_title %}{{ page.seo_title }}{% else %}{% if page.title %}{{ page.title }}{% else %}{% translate "Philly Bike Action!" %}{% endif %}{% endif %}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{% if page.search_description %}{{ page.search_description }}{% else %}Join the Action!{% endif %}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{% if page.og_image %}{% image page.og_image original as tmp_photo %}{{ tmp_photo.full_url }}{% else %}{% static 'images/og.png' %}{% endif %}{% endblock %}">
     {% endblock %}
+
+    <script defer data-domain="bikeaction.org" src="https://analytics.bikeaction.org/js/script.file-downloads.hash.outbound-links.pageview-props.revenue.tagged-events.js"></script>
+    <script>window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) }</script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+    <!-- favicons -->
+    <!-- Three needed files for favicon -->
+    <!-- https://evilmartians.com/chronicles/how-to-favicon-in-2021-six-files-that-fit-most-needs -->
+    <link rel="icon" href="{% static 'images/favicon/favicon.ico' %}">
+    <link rel="icon" href="{% static 'images/favicon/favicon.svg' %}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{% static 'images/favicon/apple-touch-icon.png' %}">
 
     {% block extra_head %}
     {% endblock %}
 
     {% block extra_js %}
     {% endblock %}
+
   </head>
   <body>
-    {% block header %}
-    <div class="header">
-      <div class="img-header">
-        <a href="https://bikeaction.org/" aria-label="{% translate "Philly Bike Action! Home" %}"><img alt="{% translate "Philly Bike Action!" %}" src="{% static 'images/pba-letters.svg' %}"></img></a>
-      </div>
-      <div class="nav-header">
-        {% if LANGUAGE_CODE == "es" %}
-        {% sitetree_menu from "header-es" include "trunk,topmenu" %}
-        {% else %}
-        {% sitetree_menu from "header" include "trunk,topmenu" %}
-        {% endif %}
-      </div>
-      <div class="mobile-nav-header">
-        <a href="javascript:void(0);" aria-label="Toggle navigation" onclick="toggleNav()">
-          <box-icon id="menu-icon" name='menu' color="white" size="md"></box-icon>
-        </a>
-        <div id="mobileNavTree">
+    <div class="wrapper">
+
+      {% block header %}
+      <div class="header">
+        <div class="img-header">
+          <a href="/" aria-label="{% translate "Philly Bike Action! Home" %}"><img alt="{% translate "Philly Bike Action!" %}" src="{% static 'images/pba-letters.svg' %}"></img></a>
+        </div>
+        <div class="nav-header">
           {% if LANGUAGE_CODE == "es" %}
           {% sitetree_menu from "header-es" include "trunk,topmenu" %}
           {% else %}
           {% sitetree_menu from "header" include "trunk,topmenu" %}
           {% endif %}
         </div>
-      </div>
-    </div>
-    {% endblock %}
-    <div class="messages">
-      <div class="messages">
-        {% for message in messages %}
-        <div {% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %}>
-          <box-icon name='x-circle' color="#E8E8E8" class="icon-remove alert-close" onclick="closeAlert(this)"></box-icon>
-          <span>{{ message }}</span>
+        <div class="mobile-nav-header">
+          <a href="javascript:void(0);" aria-label="Toggle navigation" onclick="toggleNav()">
+            <i id="menu-icon" class="fa-solid fa-bars"></i>
+          </a>
+          <div id="mobileNavTree">
+            {% if LANGUAGE_CODE == "es" %}
+            {% sitetree_menu from "header-es" include "trunk,topmenu" %}
+            {% else %}
+            {% sitetree_menu from "header" include "trunk,topmenu" %}
+            {% endif %}
+          </div>
         </div>
-        {% endfor %}
       </div>
-    </div>
-    <div class="content-container">
-    {% block content %}
-    {% endblock %}
-    </div>
-    <div class="footer">
-    {% block footer %}
+      {% endblock %}
+
+      <div class="messages">
+        {% if messages %}
+        <div class="messages">
+          {% for message in messages %}
+          <div {% if message.tags %} class="alert alert-{{ message.tags }}"{% endif %}>
+            <i class="fa-regular fa-circle-xmark icon-remove alert-close" onclick="closeAlert(this)"></i>
+            <span>{{ message }}</span>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      {% block content_container %}
+      <div class="content-container">
+      {% block content %}
+      {% endblock %}
+      </div>
+      {% endblock %}
+
+      <div class="footer">
+      {% block footer %}
         <div class="footer-row">
           <div class="footer-column">
-            <div>
-              <img width="90%" style="padding: 1em;" alt="{% translate "Philly Bike Action!" %}" src="{% static 'images/brand/PBA_pink_alpha.png' %}">
-              <p>{% translate "Safe, usable, protected, interconnected bike infrastructure for Philadelphia." %}</p>
-              <span><a style="text-decoration: none; color: white;" href="mailto:info@bikeaction.org"><box-icon name='envelope' color="white" style="position: relative; top: .4em;"></box-icon> info@bikeaction.org</a></span>
-            </div>
+            <img width="90%" style="padding: 1em;" alt="{% translate "Philly Bike Action!" %}" src="{% static 'images/pba-logo-pink.svg' %}">
+            <p>{% translate "Safe, usable, protected, interconnected bike infrastructure for Philadelphia." %}</p>
+            <span>
+              <a style="text-decoration: none; color: white;" href="mailto:info@bikeaction.org">
+                <i class="fa-regular fa-envelope"></i> info@bikeaction.org
+              </a>
+            </span>
           </div>
-          <!--
           <div class="footer-column">
-            <h3>Subscribe to our Newsletter</h3>
-            <form>
-              <div class="form-fields">
-                <p>
-                  <label for="id_first_name">First name:</label>
-                  <input type="text" name="first_name" maxlength="64" required="" id="id_first_name">
-                  <span class="helptext"></span>
-                </p>
-                <p>
-                  <label for="id_last_name">Last name:</label>
-                  <input type="text" name="last_name" maxlength="64" required="" id="id_last_name">
-                  <span class="helptext"></span>
-                </p>
-                <p>
-                  <label for="id_email">Email:</label>
-                  <input type="email" name="email" maxlength="254" required="" id="id_email">
-                  <span class="helptext"></span>
-                </p>
-              </div>
-              <div class="button-holder">
-                <input class="submit-button" type="submit" value="Submit">
-              </div>
-            </form>
+            {% with request.newsletter_form  as form %}
+            {% include '_newsletter_signup_partial.html' %}
+            {% endwith %}
           </div>
-          -->
           <div class="footer-column">
             <h3>{% translate "Find us on Social Media" %}</h3>
-              <a class="social-icon" aria-label="{% translate "@phlbikeaction on twitter" %}" href="https://twitter.com/phlbikeaction"><box-icon color="white" size="md" type='logo' name='twitter'></box-icon></a>
-              <a class="social-icon" aria-label="{% translate "@phlbikeaction on instagram" %}" href="https://www.instagram.com/phlbikeaction/"><box-icon color="white" size="md" type='logo' name='instagram'></box-icon></a>
-              <a class="social-icon" aria-label="{% translate "Philly Bike Action Discord" %}" href="https://discord.gg/FNYfjzjWnB"><box-icon color="white" size="md" type='logo' name='discord'></box-icon></a>
+              <a class="social-icon" aria-label="{% translate "@phlbikeaction on instagram" %}" href="https://www.instagram.com/phlbikeaction/">
+                <i class="fa-brands fa-instagram"></i>
+              </a>
+              <a class="social-icon" aria-label="{% translate "@bikeaction.org on blueksy" %}" href="https://bsky.app/profile/bikeaction.org">
+                <i class="fa-brands fa-bluesky"></i>
+              </a>
+              <a class="social-icon" aria-label="{% translate "@phlbikeaction on twitter" %}" href="https://twitter.com/phlbikeaction">
+                <i class="fa-brands fa-twitter"></i>
+              </a>
             <h3>{% translate "Join our Discord" %}</h3>
-              <a class="social-icon" aria-label="{% translate "Philly Bike Action Discord" %}" href="https://discord.gg/FNYfjzjWnB"><box-icon color="white" size="lg" type='logo' name='discord'></box-icon></a>
+              <a class="social-icon" aria-label="{% translate "Philly Bike Action Discord" %}" href="https://discord.gg/FNYfjzjWnB">
+                <i class="fa-brands fa-discord"></i>
+              </a>
             <h3>{% translate "Policies" %}</h3>
-              <a style="color: white" href="{% url "privacy" %}">Privacy and Data Statement</a><br>
-              <a style="color: white" href="{% url "conduct" %}">Code of Conduct</a>
+              <a style="color: white" href="/policies/privacy-and-data/">Privacy and Data Statement</a><br>
+              <a style="color: white" href="/policies/code-of-conduct/">Code of Conduct</a>
+          </div>
+          <div class="footer-row gcaptcha-disclaimer">
+            <span>
+              This site is protected by reCAPTCHA and the Google
+              <a href="https://policies.google.com/privacy">Privacy Policy</a> and
+              <a href="https://policies.google.com/terms">Terms of Service</a> apply.
+            </span>
           </div>
         </div>
-        <div class="copyright"><span>{% translate "©️ 2024 Philly Bike Action. All rights reserved." %}</span></div>
-    {% endblock %}
+        <div class="credits">
+          <span class="shoutout">
+            <a href="https://github.com/PhillyBikeAction/apps">Built</a> with
+            <a href="https://www.djangoproject.com">Django</a>,
+            <a href="https://wagtail.org">Wagtail</a>,
+            and <i class="fa-solid fa-heart"></i> in Philadelphia, PA USA
+          </span>
+          <span class="copyright"><i class="fa-regular fa-copyright"></i> {% translate "2025 Philly Bike Action. All rights reserved." %}</span>
+        </div>
+      {% endblock %}
+      </div>
     </div>
     <script src="{% static 'js/htmx.min.js' %}" defer></script>
     {% django_htmx_script %}
@@ -130,6 +169,34 @@
               nav.style.display = "block";
             }
         }
+
+        const appHeight = () => {
+          console.log(window.innerHeight);
+          document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`, "important")
+        }
+        window.addEventListener('resize', appHeight);
+        appHeight();
+
+        document.addEventListener('keydown', function(event) {
+          if (event.key === "Escape") {
+            const divElement = document.getElementById('mobileNavTree');
+            if (divElement && divElement.style.display !== 'none') {
+              divElement.style.display = 'none';
+            }
+          }
+        });
+
+        window.addEventListener('click', function(event) {
+          const divElement = document.getElementById('mobileNavTree');
+          if (event.target.id === "menu-icon") {
+            return;
+          }
+          event.stopPropagation();
+          if (!divElement.contains(event.target) && divElement.style.display !== 'none') {
+            divElement.style.display = 'none';
+          }
+        });
+
     </script>
   </body>
 </html>

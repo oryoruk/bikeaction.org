@@ -1,0 +1,21 @@
+Hello {{ profile.user.first_name }},
+
+*You are receiving this email from [Philly Bike Action](https://bikeaction.org/) because you have a PBA account and live in {{ profile.district }}.*
+
+Almost one year since we [took to the streets](https://bikeaction.org/campaigns/safer-streets-now/) for concrete protection, it’s time to remind City Council: **we STILL want concrete protected bike lanes for ALL of Spruce and Pine\!**
+
+<span style="width: 80%; text-align: center;"><img style="width: 100%; border-radius: 5px; border: solid grey;" src="templates/email/sp-postcards/sp-postcard.png"></span>
+<div style="width: 100%; text-align: center;"><i>Front of postcard with two bicyclists riding in bike lanes with concrete curb separation. Designed and printed by <a href="https://innerloop.press/">innerloop.press</a></i></div>
+
+A generous PBA member has donated their time and resources to print 500 postcards. **We need YOU to attend an upcoming meeting and fill one out:**
+
+* [District 1 Meeting](https://bikeaction.org/events/district-1-monthly-meeting-2/): **Thurs, May 29**, 7pm; Old Pine Community Center (401 Lombard)  
+* [Citywide Meeting](https://bikeaction.org/events/pba-citywide-meeting-june-2/): **Mon, June 2**, 6:30pm; Philadelphia Ethical Society (1906 Rittenhouse Square) \- *Guest Speaker: Executive Director of the PPA*  
+* [District 2 Meeting](https://bikeaction.org/events/pba-district-2-monthly-meeting-4/): **Mon, June 9**, 6:30pm; Philadelphia Ethical Society (1906 Rittenhouse Square)  
+* [District 1 Meeting](https://bikeaction.org/events/district-1-monthly-meeting-3/): **Mon, June 23**, 7pm; Old Pine Community Center (401 Lombard)
+
+**No postage needed\!** We will be collecting completed cards for an upcoming delivery to the offices of Councilmember Squilla and Council President Johnson.
+
+Questions? Want to volunteer to help scan completed cards for viewing on our website? Reply to this email and we’ll get back to you.
+
+**Philly Bike Action**

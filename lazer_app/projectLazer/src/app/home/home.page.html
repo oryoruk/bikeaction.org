@@ -1,0 +1,158 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-icon
+        [style.display]="updateService.needsUpdate? '': 'none'"
+        color="success"
+        name="refresh-circle-outline"
+        size="large"
+      ></ion-icon>
+    </ion-buttons>
+    <ion-title>Laser Vision</ion-title>
+    <ion-buttons slot="end">
+      <ion-icon
+        class="onlineIndicator indicatorGreen"
+        [style.display]="onlineStatus.online? '': 'none'"
+        name="cloud"
+      ></ion-icon>
+      <ion-icon
+        class="onlineIndicator indicatorRed"
+        [style.display]="onlineStatus.online? 'none': ''"
+        name="cloud-offline"
+      ></ion-icon>
+      <ion-spinner
+        class="onlineIndicator"
+        [style.display]="(onlineStatus.online === null)? '': 'none'"
+        name="dots"
+      ></ion-spinner>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-card *ngIf="accountService.isDonor && accountService.loggedIn">
+    <ion-card-header>
+      <ion-card-title>Thanks for being part of the Action!</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p>Your recurring donation helps us maintain and improve Laser Vision.</p>
+      <div style="text-align: center">
+        <ion-icon
+          name="heart"
+          color="success"
+          style="font-size: 2em; margin-top: 10px; margin-right: 10px"
+        ></ion-icon>
+        <ion-icon
+          name="heart"
+          style="font-size: 2em; margin-top: 10px; color: #ff69b4"
+        ></ion-icon>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card *ngIf="submittedViolationsCount >= 2 && !accountService.isDonor">
+    <ion-card-header>
+      <ion-card-title>Support Laser Vision</ion-card-title>
+      <ion-card-subtitle
+        >Help us keep the infrastructure running</ion-card-subtitle
+      >
+    </ion-card-header>
+    <ion-card-content>
+      <p>
+        <a href="https://bikeaction.org" target="_blank">Philly Bike Action</a>
+        relies on recurring donations to operate programs like Laser Vision and
+        advocate for safer streets in Philadelphia.
+      </p>
+      <br />
+      <ion-button
+        expand="block"
+        fill="outline"
+        href="https://bikeaction.org/donate/"
+        target="_blank"
+      >
+        <ion-icon name="heart" slot="start"></ion-icon>
+        Make a Recurring Donation
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card
+    *ngIf="(platform.is('android') || platform.is('ios') || platform.is('iphone')) && !platform.is('pwa')"
+  >
+    <ion-card-header>
+      <ion-card-title>Install Laser Vision</ion-card-title>
+      <ion-card-subtitle>For a better experience</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      This app can be installed to your device for a quick access and a native
+      like experience.
+      <div *ngIf="platform.is('ios') || platform.is('iphone')">
+        <ol>
+          <li>Open the Share menu</li>
+          <li>Tap "Add to Home Screen"</li>
+          <li>Tap "Add" in the upper right</li>
+        </ol>
+        <ion-img src="assets/ios-instructions.png"></ion-img>
+      </div>
+      <div *ngIf="platform.is('android')">
+        <ol>
+          <li>Tap the three dots in the upper right</li>
+          <li>Tap "Add to Home screen"</li>
+          <li>Select <b>Install</b></li>
+        </ol>
+        <ion-img src="assets/android-instructions.png"></ion-img>
+      </div>
+    </ion-card-content>
+  </ion-card>
+  <ion-card *ngIf="!geoPerms">
+    <ion-card-header>
+      <ion-card-title>GeoLocation</ion-card-title>
+      <ion-card-subtitle>Permission required</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      We need permission to access your location to accurately report
+      violations.
+      <br />
+      <br />
+      <ion-button (click)="requestGeoPerms()" expand="block">
+        <ion-icon name="navigate-circle" slot="start"></ion-icon>
+        Request Now
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Settings</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list lines="inset">
+        <ion-item>
+          <ion-checkbox
+            helperText="Whenever Laser Vision is started, it will return to this page, ensuring that you have quick access to capture violations."
+            labelPlacement="start"
+            [(ngModel)]="openToCapture"
+            (ionChange)="toggleOpenToCapture()"
+            >Open to capture</ion-checkbox
+          >
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+</ion-content>
+
+<ion-footer *ngIf="geoPerms">
+  <ion-toolbar>
+    <ion-button
+      (click)="takePicture()"
+      *ngIf="violationImage === null"
+      expand="block"
+      size="large"
+      class="plausible-event-name=Camera+Open"
+    >
+      <ion-icon name="camera" slot="start"></ion-icon>
+      Capture image
+    </ion-button>
+  </ion-toolbar>
+</ion-footer>

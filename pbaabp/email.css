@@ -44,6 +44,10 @@ p {
     line-height: 1.2rem;
 }
 
+a {
+  color: blue !important;
+}
+
 .footer {
   width: 100%;
   max-width: 600px;
@@ -52,4 +56,32 @@ p {
   background-color: black;
   color: white;
   margin-top: auto;
+}
+
+/* CSS */
+.submit-button {
+  appearance: button;
+  background-color: #70bf44;
+  background-image: none;
+  border: none;
+  border-radius: .5em;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  font-size: 1.5em;
+  font-family: "Big Shoulders Display";
+  font-weight: 700;
+  line-height: 1;
+  margin: 0 5px 10px 0;
+  overflow: visible;
+  padding: 12px 40px;
+  text-align: center;
+  text-decoration: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  vertical-align: middle;
+  white-space: nowrap;
+  transition: all 0.3s ease-in-out;
 }

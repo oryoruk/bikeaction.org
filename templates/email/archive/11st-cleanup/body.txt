@@ -1,0 +1,18 @@
+<small><i>Thank you for RSVPing to <a href="https://bikeaction.org/">our</a> <a href="https://bikeaction.org/events/11th-street-bike-lan-clean-up/">11th Street Bike Lane Clean-up</a>!</i></small>
+
+Good Morning {{ first_name }},
+
+Thank you for helping out with our 11th street clean-up. The street is looking so nice and weed free! 
+
+<b>One of our volunteers lost a black backpack with a white Nike logo after the clean-up</b>. If anyone picked it up by accident please let us know so we can help get it back to him.
+
+You can stay up to date about future PBA projects and volunteer opportunities by signing up for a [PBA account](https://bikeaction.org/accounts/signup/) and attending one of our [monthly district meetings](https://bikeaction.org/events/).
+
+See you at the next clean-up!
+
+<div style="width: 100%; text-align: center;">
+  <img style="width: 66%;" src="templates/email/11st-cleanup/group.jpg">
+</div>
+
+Ben & Jacob  
+*Philly Bike Action*

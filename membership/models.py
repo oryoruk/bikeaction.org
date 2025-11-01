@@ -51,9 +51,14 @@ class Donation(models.Model):
     donation_product = models.ForeignKey(
         DonationProduct, blank=True, null=True, on_delete=models.SET_NULL, related_name="donations"
     )
+    comment = models.CharField(max_length=256, blank=True, null=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=False, blank=False)
 
     def __str__(self):
+        if self.comment and not self.donation_product:
+            return f'Donation of ${self.amount} - "{self.comment}"'
+        if self.comment and self.donation_product:
+            return '"Donation of ${self.amount} to {self.donation_product.name} - "{self.comment}"'
         return f"Donation of ${self.amount} to {self.donation_product.name}"
 
 
@@ -97,5 +102,17 @@ class Membership(models.Model):
         PARTICIPATION = 1, "Participation"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="memberships")
     kind = models.IntegerField(null=False, blank=False, choices=Kind.choices)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    reason = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    class Meta:
+        ordering = ["-start_date"]
+
+    def __str__(self):
+        end_str = f" to {self.end_date}" if self.end_date else " (ongoing)"
+        return f"{self.user.email} - {self.get_kind_display()} - {self.start_date}{end_str}"

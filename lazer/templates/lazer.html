@@ -1,0 +1,149 @@
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.11.7/lib/p5.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    button {
+      padding: 2rem;
+      font-size: 4rem;
+    }
+    #header {
+      position: fixed;
+      top: 2rem;
+      font-size: 2rem;
+      width: 100%;
+      text-align: center;
+      background: white;
+      margin: 0;
+    }
+    #viewfinder {
+      position: fixed;
+      top: 9rem;
+      left: 0;
+      width: 100%;
+      height: 75%;
+      z-index: 100;
+    }
+    #location {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 2.5rem;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="viewfinder"></canvas>
+  <p id="header">Snap a pic of a car in a bike lane!<br>Make sure the plate is clearly visible!</p>
+  <p id="location">Hi</p>
+</body>
+
+<script>
+
+var button;
+var capture;
+var capturedImage;
+var capturedLocation;
+
+function geoLocate() {
+  const location = document.getElementById("location");
+  location.innerHTML = "locating you...";
+
+  function success(position) {
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+    capturedLocation = { latitude: latitude, longitude: longitude };
+    location.innerHTML = `${latitude}, ${longitude}`;
+    button.removeAttribute('disabled');
+  }
+
+  function error() {
+    capturedLocation = { latitude: null, longitude: null};
+    location.innerHTML = "error!"
+  }
+
+  if (!navigator.geolocation) {
+    location.innerHTML = "Geolocation is not supported by your browser";
+  } else {
+    navigator.geolocation.getCurrentPosition(success, error, {maximumAge: 60000, enableHighAccuracy: true});
+  }
+}
+
+function setup() {
+
+  geoLocate();
+
+  const canvas = document.getElementById("viewfinder");
+  createCanvas(windowWidth, .75*windowHeight, canvas);
+
+  button = createButton("Capture");
+  button.mousePressed(capturePhoto);
+  button.position(0, .85*windowHeight);
+  button.center("horizontal");
+  button.attribute('disabled', '');
+
+  capturedImage = createImage(768, 1024);
+
+  var constraints = {
+    audio: false,
+    video: {
+      facingMode: {
+        exact: "environment"
+      }
+    }    
+  };
+
+  capture = createCapture(constraints);
+  capture.hide();
+}
+
+
+function draw() {
+ image(capture, 0, 0, windowWidth, .75*windowHeight); 
+}
+
+function submit() {
+  const now = new Date();
+  const nowUtcIso = now.toISOString();
+
+  const data = {
+    latitude: capturedLocation.latitude,
+    longitude: capturedLocation.longitude,
+    datetime: nowUtcIso,
+    image: capturedImage.canvas.toDataURL()
+  }
+
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.style.display = 'none';
+  document.body.appendChild(form);
+  for (const key in data) {
+    if (data.hasOwnProperty(key)) {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = data[key];
+      form.appendChild(input);
+    }
+  }
+  form.submit();
+}
+
+function capturePhoto() {
+  button.attribute('disabled', '');
+  capturedImage = capture.get();
+  clear();
+  image(capturedImage, 0, 0, windowWidth, .75*windowHeight);
+  capture.remove();
+  setTimeout(submit, 500);
+}
+
+window.onload = function() {
+  setup();
+}
+
+</script>

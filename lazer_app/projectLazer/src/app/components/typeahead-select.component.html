@@ -1,0 +1,33 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-button (click)="cancelChanges()">Cancel</ion-button>
+    </ion-buttons>
+    <ion-title>{{ title }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="confirmChanges()">Done</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar
+      (ionInput)="searchbarInput($event)"
+      placeholder="Start typing to search..."
+      value="{{ selectedItem }}"
+    ></ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content color="light" class="ion-padding">
+  <ion-list id="modal-list" [inset]="true">
+    @for (item of filteredItems; track item.get("value")) {
+      <ion-item>
+        <ion-checkbox
+          [value]="item.get('value')"
+          [checked]="isChecked(item.get('value'))"
+          (ionChange)="checkboxChange($event)"
+          >{{ item.get("text") }}</ion-checkbox
+        >
+      </ion-item>
+    }
+  </ion-list>
+</ion-content>

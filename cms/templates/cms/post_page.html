@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% load wagtailuserbar %}
+
+{% load wagtailcore_tags %}
+
+{% block body_class %}cms-stream-page{% endblock %}
+
+{% block content %}
+  {% wagtailuserbar %}
+  <div class="cms-content">
+    <div class="cms-title">
+      <h1>{{ page.title }}</h1>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr;">
+      <span><i class="fa-regular fa-circle-user"></i> {{ page.author }}</span>
+      <span style="text-align: right;"><i class="fa-regular fa-calendar"></i> {{ page.date }}</span>
+    </div>
+    {% if page.tags.all %}
+    <div class="post-tags" style="margin: 1rem 0;">
+      <i class="fa-solid fa-tags"></i> Tags:
+      {% for tag in page.tags.all %}
+        <a href="{{ page.get_parent.url }}tag/{{ tag.slug }}/" style="margin-right: 10px; padding: 3px 8px; background: #f0f0f0; text-decoration: none; border-radius: 3px;">{{ tag.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="cms-body">
+      {% include_block page.body %}
+    </div>
+    <div class="prev-next" style="display: grid; grid-template-columns: 1fr 1fr;">
+      <div class="prev">
+        {% if page.prev_post %}
+        <p>Previous:</p>
+        <a href="{{ page.prev_post.canonical_url }}">{{ page.prev_post.title }}</a>
+        {% endif %}
+      </div>
+      <div class="next" style="text-align: right;">
+        {% if page.next_post %}
+        <p>Next:</p>
+        <a href="{{ page.next_post.canonical_url }}">{{ page.next_post.title }}</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+{% endblock %}

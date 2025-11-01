@@ -1,0 +1,12 @@
+Hi {{ first_name }},
+
+<small><i>You are recieving this message from <a href="https://bikeaction.org/">Philly Bike Action</a> because you RSVPd to our <a href="https://bikeaction.org/events/belmont-speedway-family-picnic/">Belmont Speedway Family Picnic</a>.</i></small>
+
+Remember that the picnic will take place this Sunday!  Much like the beloved bike lane parties of yore, we will call attention to unsafe road conditions while having a family-friendly good time. There will be speed radars and signs as well as music and food. Bring a picnic basket, food, and blanket and a love for safe streets! 
+
+Belmont Speedway Family Picnic  
+📅 Date: Sunday, October 19  
+⏲️ Time: 12:00 - 2:00 pm  
+🌳 Location: Belmont Ave at the Cherry Blossoms
+
+**Philly Bike Action**

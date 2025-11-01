@@ -18,14 +18,21 @@ class AllEventsFeed(ICalFeed):
         return (
             ScheduledEvent.objects.all()
             .exclude(status=ScheduledEvent.Status.DELETED)
+            .exclude(hidden=True)
             .order_by("-start_datetime")
         )
+
+    def item_guid(self, item):
+        return item.id
 
     def item_title(self, item):
         return item.title
 
     def item_description(self, item):
         return item.description
+
+    def item_location(self, item):
+        return item.location
 
     def item_start_datetime(self, item):
         return item.start_datetime

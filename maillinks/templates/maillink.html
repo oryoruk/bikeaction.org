@@ -1,183 +1,34 @@
-{% load static %}
-<head>
-<style>
-@font-face {
-  font-family: "Rockwell";
-  src:
-    url("{% static 'fonts/Rockwell.otf' %}") format("opentype");
-  font-weight: 400;
-}
+{% extends "base.html" %}
+{% load static markdownify %}
 
-@font-face {
-  font-family: "SocialGothicStencil";
-  src:
-    url("{% static 'fonts/SocialGothicStencil.otf' %}") format("opentype");
-  font-weight: 400;
-}
+{% block content %}
 
-@media print {
-    .pagebreak {
-        clear: both;
-        page-break-after: always;
-    }
-
-    * {
-        -webkit-print-color-adjust:exact;
-    }
-
-    body {
-        margin: 32pt;
-    }
-}
-
-body {
-  font-family: "Rockwell";
-  font-size: 12pt;
-  width: 540pt;
-}
-
-h1 {
-  font-family: "SocialGothicStencil";
-  font-size: 30pt;
-}
-
-h2 {
-  font-size: 16pt;
-  padding-left: 1.5em;
-  padding-right: 1.5em;
-}
-
-h1, h2, h3, h4 {
-  text-align: center;
-}
-
-p {
-  text-align: center;
-}
-
-ul {
-  list-style: none;
-  margin-left: 0;
-  padding-left: 1em;
-}
-
-li {
-  padding-left: 1em;
-  text-indent: -1em;
-}
-
-li:before {
-  content: ">>";
-  font-family: "SocialGothicStencil";
-  padding-right: 5px;
-}
-
-ul li ul li:before {
-  content: "";
-}
-
-/*
-div {
-  box-shadow: inset 0 0 10px #0f0;
-}
-*/
-
-.primary {
-  display: inline-block;
-  width: 540pt;
-  min-height: 200pt;
-  grid-column: span 2;
-  box-sizing: border-box;
-  padding: 1em;
-}
-
-.primary p {
-  padding-left: 3em;
-  padding-right: 3em;
-}
-
-.secondary {
-  display: inline-block;
-  width: 270pt;
-  box-sizing: border-box;
-  padding: 1em;
-}
-
-.secondary h3 {
-  margin: 0;
-}
-
-.grid-container {
-  display: grid;
-  grid-template-columns: 270pt 270pt;
-  grid-template-rows: auto;
-  grid-gap: 0px;
-}
-
-pre:lang(email) {
-  white-space: pre-wrap;
-}
-
-.email {
-  padding: 1em;
-  background-color: #eeeeee;
-}
-
-.email-body {
-  font-family: 'Rockwell';
-  white-space: pre-line;
-}
-
-.email-cta h1 {
-  font-size: 16pt;
-  padding-left: 1em;
-  padding-right: 1em;
-  padding-top: 1em;
-}
-
-.email-cta p {
-  font-size: 12pt;
-  padding-left: 1.25em;
-  padding-right: 1.25em;
-}
-
-.email-cta .svg-container svg {
-  display: block;
-  margin: auto;
-  width: 100%;
-  margin-left: 12pt;
-  margin-right: 12pt;
-}
-
-.email-container {
-  display: grid;
-  grid-template-columns: 66% 34%;
-  grid-template-rows: auto;
-  grid-gap: 0px;
-}
-
-.inline-qrcode {
-  height: 100pt;
-  text-align: center;
-  svg {
-    height: 100%;
-    margin: auto;
-  }
-}
-
-</style>
-</head>
-<body>
+<div style="max-width: 40em; margin: 0 auto;">
 <h1>{{ maillink.title }}</h1>
+
 {% if maillink.description%}
-<p style="font-size: larger;">{{ maillink.description }}</p>
+<div>{{ maillink.description|markdownify }}</div>
 {% endif %}
+
+<p style="width: 33%; margin: 1em auto; text-align: center;">
+  <a class="cta-button submit-button" href="{{ mail_link }}">Send Now!</a>
+  <br><small>This will open your email client with a draft email for you to edit and send.</small>
+</p>
+
 <table class="email">
-  <tr><td>Subject:</td><td>{{ maillink.subject }}</td></tr>
-  <tr><td>To:</td><td>{{ maillink.to }}</td></tr>
+  <tr><td>Subject:</td><td><b>{{ maillink.subject }}</b></td></tr>
+  <tr><td>To:</td><td><b>{{ maillink.to }}</b></td></tr>
   {% if maillink.cc %}<tr><td>Cc:</td><td>{{ maillink.cc }}</td></tr>{% endif %}
-  <tr><td class="email-body" colspan=2>{{ maillink.body }}</td></tr>
+  <tr><td class="email-body" colspan=2>{{ maillink.body }}{% if first_name or last_name or address %}
+
+-{{first_name}} {{last_name}}
+{{address}}
+{% endif %}</td></tr>
 </table>
 
-<p><a href="{{ maillink.link }}">Send Now</a></p>
-</body>
+<p style="width: 33%; margin: 1em auto; text-align: center;">
+  <a class="cta-button submit-button" href="{{ mail_link }}">Send Now!</a>
+  <br><small>This will open your email client with a draft email for you to edit and send.</small>
+</p>
+</div>
+{% endblock %}

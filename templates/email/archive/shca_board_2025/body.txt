@@ -1,0 +1,35 @@
+Hello {{ first_name }},
+
+*You are receiving this email because you have a Philly Bike Action account and you live within the RCO boundaries of Society Hill Civic Association (SHCA).*
+
+Your local community organization, [Society Hill Civic Association](https://societyhillcivic.org/) is holding its annual board election **online** on May 19th to 21st.
+
+***It's critical that residents elect a bike-friendly Board that will support the Spruce/Pine bike lane safety upgrades.***
+
+Philly Bike Action encourages you to vote for the following bike-friendly candidates:
+
+* **Al Meinster**  
+* **Eric Stahl**  
+* **Brandon Englehart**  
+* **Bonnie Halda**   
+* **Tanya Brassie** (SE Quadrant only)  
+* **David Haas** (NE Quadrant only)
+
+Several members of the **anti-protected bike lane group** FoPS are running for the board. We recommend **not** voting for any of the following:
+
+* Mary Purcell  
+* Jay Borowsky  
+* Brooke Marshall  
+* Ned Scharff  
+* Nelie Shah (SE Quadrant only)  
+* Paul Boni (NE Quadrant only)
+
+You can see a list of all the candidates [here](https://oymihgcab.cc.rs6.net/tn.jsp?f=001cWQentMqQ6EiKraro8h1TUaesFBgmX7xozRnmHm5tY7Big0iIpFAwyW-8s0tDM_5AaUFE0R1OTR-4lC5GbxGpy2KEPdQBJ3coVgqzmsL2AenoGt2v6bmhkYDOopISz5VthDykaQELgKidn1_Evn8eASLZCEdIG_gQFK52NgHhWsxRgaAekR4yjMsVoz9LXDTGtjPJalST2cUwkRP75BfdiN_IXlDEzWxCLO0eqaKqN9X1uNrqiMYiZolXjEXYSkX&c=qlsfbeh5hecHP8rgdHNRLoFUeb45oeaO6eanTOnxFhLqICqhiA1spA==&ch=zsShbnBOlvzWSGKbjfmivgTldbIQjsFXRZdsg4rdFFQT_3Bx3OTqzA==) and read their bios [here](https://oymihgcab.cc.rs6.net/tn.jsp?f=001cWQentMqQ6EiKraro8h1TUaesFBgmX7xozRnmHm5tY7Big0iIpFAwyW-8s0tDM_5uYUve3OaeYtEibu7NHoKKvOmMKH9QbX-52YHiUIhoYGdDAupeVR_4vrg2Lt09J31ovrnBR8I_unfm3Dcfr99lHIzl4QzwGZgk-9efKLgBc44c98V3IOrLCn48_MlS5yyjdj8SxSVCZNqtZM4F5ADm6j7PwriBNPEomIKFIEE9Bcdxjle2EuzFAnUDqXUxiGr&c=qlsfbeh5hecHP8rgdHNRLoFUeb45oeaO6eanTOnxFhLqICqhiA1spA==&ch=zsShbnBOlvzWSGKbjfmivgTldbIQjsFXRZdsg4rdFFQT_3Bx3OTqzA==).
+
+**To be eligible to vote**, you must have joined SHCA and paid your 2025 dues by March 31st. Each eligible member-household will receive an email with a link to the electronic ballot on May 19th. You can read more about the voting procedures [here](https://oymihgcab.cc.rs6.net/tn.jsp?f=001cWQentMqQ6EiKraro8h1TUaesFBgmX7xozRnmHm5tY7Big0iIpFAwyW-8s0tDM_5rEnhUjk5rmcFys92Eq6DWcO0MBIaWsyP-d-X8oPPIF-b4XfgqP2CAhSJdIkJf-opkV7V1bC2sj3zCBvUR37u1oVVui1TRl1MUBA_FeMCfI42mbYiaMC8Vd6HysbC1Ar0Njf7wjFQuNY-qamweq9wFRYlVQwf1rhHww5mR3m6j1__LAEvgHpWj1uUNtGQiD5s&c=qlsfbeh5hecHP8rgdHNRLoFUeb45oeaO6eanTOnxFhLqICqhiA1spA==&ch=zsShbnBOlvzWSGKbjfmivgTldbIQjsFXRZdsg4rdFFQT_3Bx3OTqzA==).
+
+Each member-household will get to vote for 8 at-large positions, 1 to 3 quadrant positions determined depending on their address, and 5 officer positions.
+
+If you have any questions about the election, please feel free to reach out to [distirct1@bikeaction.org](mailto:distirct1@bikeaction.org).
+
+**Philly Bike Action**

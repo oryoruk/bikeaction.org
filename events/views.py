@@ -35,6 +35,7 @@ class EventsListView(ListView):
     def get_queryset(self):
         queryset = ScheduledEvent.objects.all()
         queryset = queryset.exclude(status=ScheduledEvent.Status.DELETED)
+        queryset = queryset.exclude(hidden=True)
         queryset = queryset.filter(
             start_datetime__gte=datetime.datetime.now() - datetime.timedelta(hours=3)
         )
@@ -64,6 +65,7 @@ class PastEventsListView(ListView):
     def get_queryset(self):
         queryset = ScheduledEvent.objects.all()
         queryset = queryset.exclude(status=ScheduledEvent.Status.DELETED)
+        queryset = queryset.exclude(hidden=True)
         queryset = queryset.filter(
             start_datetime__lte=datetime.datetime.now() - datetime.timedelta(hours=3)
         )
@@ -96,6 +98,7 @@ class EventDetailView(DetailView):
             ScheduledEvent.objects.order_by("start_datetime")
             .exclude(status=ScheduledEvent.Status.DELETED)
             .exclude(pk=current_object.pk)
+            .exclude(hidden=True)
             .filter(start_datetime__gte=current_object.start_datetime)
             .first()
         )
@@ -105,6 +108,7 @@ class EventDetailView(DetailView):
             ScheduledEvent.objects.order_by("-start_datetime")
             .exclude(status=ScheduledEvent.Status.DELETED)
             .exclude(pk=current_object.pk)
+            .exclude(hidden=True)
             .filter(start_datetime__lte=current_object.start_datetime)
             .first()
         )
@@ -196,9 +200,9 @@ def event_signin(request, event_slug_or_id):
             if request.GET.get("kiosk", False):
                 return redirect("event_signin_kiosk_postroll", event_slug_or_id=event.slug)
             else:
-                return HttpResponseRedirect("https://bikeaction.org")
+                return HttpResponseRedirect("/")
     elif timezone.now() > event.start_datetime + datetime.timedelta(days=1):
-        return HttpResponseRedirect("https://bikeaction.org")
+        return HttpResponseRedirect("/")
     else:
         form = EventSignInForm()
 

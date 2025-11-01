@@ -28,9 +28,9 @@
         {% endslot %}
         {% slot actions %}
             <div class="button-holder">
-            {% element button tags="prominent,signup" type="submit" %}
+                <button class="submit-button" type="submit">
                 {% trans "Sign Up" %}
-            {% endelement %}
+                </button>
             </div>
         {% endslot %}
     {% endelement %}
@@ -40,4 +40,6 @@
     {% endif %}
     {% endcomment %}
 </div>
+<br>
+<br>
 {% endblock content %}

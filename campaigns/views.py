@@ -73,8 +73,8 @@ def sign_petition(request, petition_slug_or_id):
                             f"{form.instance.first_name} {form.instance.last_name} "
                             f"<{settings.DEFAULT_FROM_EMAIL}>"
                         ),
-                        to=petition.email_to,
-                        cc=petition.email_cc,
+                        to=petition.email_to.splitlines(),
+                        cc=petition.email_cc.splitlines(),
                         reply_to=[form.instance.email],
                     )
                     email.send()
@@ -126,11 +126,11 @@ def sign_petition(request, petition_slug_or_id):
                     body += f"\n{last_line}"
 
                 _link = "mailto:"
-                _link += quote(", ".join(petition.email_to))
+                _link += quote(", ".join(petition.email_to.splitlines()))
                 _link += "?"
                 params = {}
                 if petition.email_cc:
-                    params["cc"] = ", ".join(petition.email_cc)
+                    params["cc"] = ", ".join(petition.email_cc.splitlines())
                 params["subject"] = subject
                 params["body"] = body
                 _link += urlencode(params, quote_via=quote)
@@ -140,6 +140,24 @@ def sign_petition(request, petition_slug_or_id):
                 return response
 
             messages.add_message(request, messages.SUCCESS, message)
+
+            if petition.redirect_after is not None:
+                return redirect(
+                    petition.redirect_after
+                    + "?"
+                    + urlencode(
+                        {
+                            k: v
+                            for k, v in {
+                                "first_name": form.instance.first_name,
+                                "last_name": form.instance.last_name,
+                                "address": form.instance.postal_address_line_1,
+                            }.items()
+                            if v is not None
+                        }
+                    )
+                )
+
             if petition.campaign:
                 return redirect("campaign", slug=petition.campaign.slug)
             else:

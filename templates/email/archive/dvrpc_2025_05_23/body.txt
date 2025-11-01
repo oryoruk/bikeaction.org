@@ -1,0 +1,21 @@
+Hello {{ profile.user.first_name }},
+
+*You are receiving this email from [Philly Bike Action](https://bikeaction.org/) because you have a PBA account.*
+
+The Delaware Valley Regional Planning Commission (DVRPC) is collecting traffic safety concerns in its new [interactive map](https://www.dvrpc.org/webmaps/rvz_crowdsource_map/).
+
+Comments gathered will inform the creation of the Regional Vision Zero (RVZ) plan, which will **identify future traffic safety projects**.
+
+Use the map to report areas of unsafe bike lanes, poor visibility, near miss incidents, and more (on both city and state-owned roads). You can also “like” 👍and comment on existing concerns that others submitted.
+
+*If you previously filled out the PennDOT Transportation Survey, we recommend adding those same spots to the DVRPC map, and any other dangerous spots.*
+
+<span style="width: 80%; text-align: center;"><img style="width: 100%; border-radius: 5px; border: solid grey;" src="templates/email/dvrpc_2025_05_23/dvrpc.png"></span>
+
+Don’t delay: **the map closes May 23, 2025**\!
+
+Questions on how to add concerns to the map? Reply to this email and we’ll get back to you.
+
+Further information on this survey can be found here: [Share Your Traffic Safety Concerns in Greater Philadelphia\!](https://www.dvrpc.org/news/2025/share-your-traffic-safety-concerns/)
+
+**Philly Bike Action**

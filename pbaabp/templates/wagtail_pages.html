@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load wagtailcore_tags %}
+
+{% block extra_head %}
+<style>
+
+.all-pages-container {
+  display: grid;
+  grid-template-columns: max-content max-content;
+}
+
+.all-pages-container a {
+  color: black;
+  padding: .125em;
+}
+
+.all-pages-container .link,.url {
+  display: block;
+}
+
+.all-pages-container .level-0 {
+  padding-left: 0em;
+}
+
+.all-pages-container .level-1 {
+  padding-left: 1em;
+}
+
+.all-pages-container .level-2 {
+  padding-left: 2em;
+}
+
+.all-pages-container .level-3 {
+  padding-left: 3em;
+}
+
+.all-pages-container .level-4 {
+  padding-left: 4em;
+}
+
+.all-pages-container .level-5 {
+  padding-left: 5em;
+}
+
+</style>
+{% endblock %}
+
+{% block content %}
+<h1>All Pages</h1>
+
+<div class="all-pages-container">
+
+  <div class="all-pages-links">
+  {% for obj in pages %}
+    <span class="link level-{{ obj.depth }}">
+      <a href="{% pageurl obj %}" class="level-{{ obj.depth }}">{{ obj.title }}</a>
+    </span>
+  {% endfor %}
+  </div>
+
+  <div class="all-pages-urls">
+  {% for obj in pages %}
+    <span class="url level-{{ obj.depth }}">
+      <code>{% pageurl obj %}</code>
+    </span>
+  {% endfor %}
+  </div>
+
+</div>
+
+{% endblock %}

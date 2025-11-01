@@ -14,36 +14,47 @@
 {% endblock %}
 
 {% block content %}
-<div class="">
+<div class="rco-container">
   <h1>Find your Registered Community Organization(s)</h1>
 
-  {% if GOOGLE %}
-  <p>Enter your street address and press "Search"</p>
-  {% else %}
-  <p>Enter your <i>full</i> street address and press "Search"</p>
-  <small>
-    <p>Examples:</p>
-    <ul>
-      <li>1400 John F Kennedy Blvd</li>
-      <li>1356 N Front St</li>
-      <li>1501 E Passyunk Ave</li>
-    </ul>
-  </small>
-  {% endif %}
-  
-  <form
-    hx-target="#result"
-    hx-post="{% url 'rco_search' %}"
-    hx-ext="json-enc"
-    hx-indicator="#indicator"
-  >
-    {% csrf_token %}
-    <input type="text" name="street_address" placeholder="Your Street Address" required>
-    <br><br>
-    <button type="submit">Search</button>
-    <img id="indicator" class="htmx-indicator" src="{% static 'images/spinner.gif' %}" style="height: 2em; padding-left: 1em;">
-  </form>
-  
+  <div class="form-container">
+    <form
+      hx-target="#result"
+      hx-post="{% url 'rco_search' %}"
+      hx-ext="json-enc"
+      hx-indicator="#indicator"
+    >
+      <div class="form-header">
+        {% if GOOGLE %}
+        <p style="text-align: center">Enter your street address and press "Search"</p>
+        {% else %}
+        <p>Enter your <i>full</i> street address and press "Search"</p>
+        {% endif %}
+      </div>
+
+      {% csrf_token %}
+      <p>
+        <input type="text" id="street_address" name="street_address" autocomplete="shipping street-address" placeholder="Your Street Address" required>
+        {% if not GOOGLE %}
+        <span class="helptext">
+          <small>
+            <p>Examples:</p>
+            <ul>
+              <li>1400 John F Kennedy Blvd</li>
+              <li>1356 N Front St</li>
+              <li>1501 E Passyunk Ave</li>
+            </ul>
+          </small>
+        </span>
+        {% endif %}
+      <p>
+      <div class="button-holder">
+        <button class="submit-button" type="submit">Search</button>
+        <img id="indicator" class="htmx-indicator" src="{% static 'images/spinner.gif' %}" style="height: 2em; padding-left: 1em; position: absolute;">
+      </div>
+    </form>
+  </div>
+  <br>
   <div>
     <div id="result">
     </div>

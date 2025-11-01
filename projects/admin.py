@@ -4,7 +4,7 @@ from projects.models import ProjectApplication
 
 
 class ProjectApplicationAdmin(admin.ModelAdmin):
-    pass
+    list_display = ("__str__", "submitter")
 
 
 admin.site.register(ProjectApplication, ProjectApplicationAdmin)

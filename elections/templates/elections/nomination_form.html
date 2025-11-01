@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-header">
+  <h1>Nominate Someone for {{ election.title }}</h1>
+
+  <div style="text-align: left;">
+    <p>
+      <b>Nomination Period:</b> {{ election.nominations_open|date:"F j, Y" }} - {{ election.nominations_close|date:"F j, Y" }}
+    </p>
+
+    <p>
+      You can save your nomination as a draft and return to it later from your profile page.
+    </p>
+
+    <b>
+      You can return to this page to nominate more than one person.
+    </b>
+  </div>
+</div>
+
+<div class="form-container">
+  <form class="application-form" method="post">
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="form-errors">
+      <p><b>Form invalid!</b> Please correct errors in <span style="color: red;">red</span> below</p>
+      <br>
+    </div>
+    {% endif %}
+
+    {{ form.non_field_errors }}
+
+    {% for hidden_field in form.hidden_fields %}
+      {{ hidden_field.errors }}
+      {{ hidden_field }}
+    {% endfor %}
+
+    <h2>Nomination</h2>
+
+    <div class="formfield">
+      {% if nomination and not nomination.draft %}
+      <label>Nominee:</label>
+      <span class="prefilled">{{ nomination.nominee.user.first_name }} {{ nomination.nominee.user.last_name|slice:':1' }}.</span>
+      <input type="hidden" id="id_nominee" name="nominee" value="{{ form.nominee.value|default:'' }}" />
+      {% else %}
+      <label for="nominee_search">Search for Nominee:</label>
+      <input
+        type="text"
+        id="nominee_search"
+        name="nominee_search"
+        placeholder="Type name or Discord handle..."
+        autocomplete="off"
+        hx-get="{% url 'nominee_search' %}"
+        hx-trigger="keyup changed delay:300ms"
+        hx-target="#search-results"
+        hx-include="[name='nominee_search']"
+        hx-vals='js:{"q": document.getElementById("nominee_search").value}'
+        {% if nomination and nomination.nominee %}
+        value="{{ nomination.nominee.user.first_name }} {{ nomination.nominee.user.last_name|slice:':1' }}."
+        {% endif %}
+      />
+      <div id="search-results"></div>
+      <input type="hidden" id="id_nominee" name="nominee" value="{{ form.nominee.value|default:'' }}" />
+      {% if form.nominee.errors %}
+      <div class="error">{{ form.nominee.errors }}</div>
+      {% endif %}
+      <span class="helptext">Search for a member by name or Discord handle. Only members in good standing can be nominated.</span>
+      {% endif %}
+    </div>
+
+    <div class="formfield">
+      <p>
+        {{ form.nomination_statement.label_tag }}
+        {{ form.nomination_statement.errors }}
+        {{ form.nomination_statement }}
+        <span class="helptext">
+          <span id="self-nomination-notice" style="display: none;"><b>If self-nominating, please include Officer positions you would be willing to fulfill such as Chair (administering Board meetings), Secretary, or Treasurer.</b><br><br></span>{{ form.nomination_statement.help_text|safe }}
+        </span>
+      </p>
+    </div>
+
+    {% if nomination and not nomination.draft %}
+    <div class="button-holder">
+      <button class="submit-button" type="submit" name="submit-nomination" value="Submit">Save Nomination</button>
+    </div>
+    {% else %}
+    <div class="button-holder">
+      <button class="secondary-button" type="submit" name="save-draft" value="Save Draft" formnovalidate="formnovalidate">Save Draft</button>
+      <button class="submit-button" type="submit" name="submit-nomination" value="Submit">Submit Nomination</button>
+      <span class="helptext">Use "Save Draft" to store your nomination without submitting. Once submitted, nominations for others cannot be edited.</span>
+    </div>
+    {% endif %}
+
+  </form>
+</div>
+
+<style>
+.nominee-search-results {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.nominee-result {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+.nominee-result:hover {
+  background-color: #f5f5f5;
+}
+
+.nominee-result:last-child {
+  border-bottom: none;
+}
+
+.discord-handle {
+  color: #5865F2;
+  margin: 0 10px;
+}
+
+.email {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.no-results {
+  padding: 10px;
+  color: #666;
+  text-align: center;
+}
+</style>
+
+<script>
+// Current user ID for self-nomination check
+const currentUserId = {{ request.user.id }};
+
+// Function to show/hide self-nomination notice based on selected nominee
+function updateSelfNominationNotice() {
+  const selectedUserId = document.getElementById('id_nominee').value;
+  const noticeElement = document.getElementById('self-nomination-notice');
+
+  if (noticeElement) {
+    if (selectedUserId && parseInt(selectedUserId) === currentUserId) {
+      // Self-nomination: show the notice
+      noticeElement.style.display = 'block';
+    } else {
+      // Regular nomination: hide the notice
+      noticeElement.style.display = 'none';
+    }
+  }
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.nominee-result')) {
+    const result = e.target.closest('.nominee-result');
+    const userId = result.dataset.userId;
+    const userName = result.dataset.userName;
+
+    // Set the hidden field value
+    document.getElementById('id_nominee').value = userId;
+
+    // Update the search field to show selected name
+    document.getElementById('nominee_search').value = userName;
+
+    // Clear the search results
+    document.getElementById('search-results').innerHTML = '';
+
+    // Update self-nomination notice
+    updateSelfNominationNotice();
+  }
+});
+
+// Update notice on page load if nominee is already selected
+document.addEventListener('DOMContentLoaded', function() {
+  updateSelfNominationNotice();
+});
+</script>
+{% endblock %}

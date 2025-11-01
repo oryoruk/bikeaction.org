@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content_container %}
+<div class="content-container campaign-content-container" style="padding-bottom: 0; margin-bottom: -1em;">
+{% block content %}
+<script>
+  function resizeIframe(obj) {
+    var daframe = document.getElementById("daframe");
+    daframe.style.height = daframe.contentWindow.document.body.scrollHeight + 'px';
+  }
+  window.addEventListener("resize", (event) => {resizeIframe()});
+</script>
+<iframe
+  src="/archive/safe-streets-ride/inner/"
+  id="daframe"
+  onload="resizeIframe()"
+  scrolling="no"
+  style="width: 100%; height: 1000px; resize: both; overflow: auto; border: none;"></iframe>
+{% endblock %}
+</div>
+{% endblock %}

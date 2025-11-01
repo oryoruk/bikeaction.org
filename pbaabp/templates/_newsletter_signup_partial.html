@@ -1,0 +1,65 @@
+{% with form_name=form.form_name|default_if_none:"footer" %}
+<div id="{{ form_name }}newsletterDiv" hx-target="this" hx-swap="innerHtml swap:0.5s">
+  {% if form.show_header %}
+  <h3>Subscribe to our Monthly Newsletter</h3>
+  {% endif %}
+
+  <form name="{{ form_name }}NewsletterForm" class="{{ form_name }}NewsletterForm" id="{{ form_name }}NewsletterForm" class="fade-me-out" action="javascript:void(0);">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div>
+      <script>
+        function {{ form_name }}submitNewsletterFormAnnounce(){
+            const event = new Event('verified');
+            const elem = document.querySelector("#{{ form_name }}NewsletterSubmit");
+            elem.dispatchEvent(event);
+        }
+        function {{ form_name }}submitNewsletterForm () {
+            const button = document.getElementById("{{ form_name }}NewsletterSubmit");
+            button.disabled = true;
+            const form = document.getElementById("{{ form_name }}NewsletterForm");
+            if (form.checkValidity()) {
+                const widgetId = grecaptcha.render('{{ form_name }}newsletter-form-recaptcha', {
+                    'sitekey' : '{{ request.google_recaptcha_site_key }}',
+                    'callback' : {{ form_name }}submitNewsletterFormAnnounce,
+                    'size' : "invisible"
+                });
+              grecaptcha.reset(widgetId);
+              grecaptcha.execute(widgetId);
+            } else {
+              button.disabled = false;
+            }
+        }
+      </script>
+    </div>
+
+    <input type="hidden" name="form_name" value="{{ form_name }}">
+    <input type="hidden" name="show_header" value="{% if form.show_header %}1{% endif %}">
+
+    {% for field in form %}
+    <p>
+      {{ field }}
+      {{ field.errors }}
+    </p>
+    {% endfor %}
+
+    <div class="button-holder">
+      <div
+        id="{{ form_name }}newsletter-form-recaptcha"
+      ></div>
+      <button
+        type="post"
+        id="{{ form_name }}NewsletterSubmit"
+        hx-post="{% url 'newsletter_signup_partial' %}"
+        hx-trigger="verified"
+        hx-on:click="{{ form_name }}submitNewsletterForm()"
+        class="homepage-button"
+      >
+          Submit
+      </button>
+    </div>
+  </form>
+</div>
+{% endwith %}

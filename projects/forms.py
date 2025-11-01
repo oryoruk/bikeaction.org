@@ -13,7 +13,7 @@ class ProjectApplicationForm(forms.Form):
     quick_summary = forms.CharField(
         label="Quick Summary",
         widget=forms.Textarea(attrs={"rows": 3}),
-        help_text="Briefly describe your project",
+        help_text="Briefly describe your project. <i>This will be public.</i>",
         required=True,
     )
 
@@ -103,7 +103,7 @@ class ProjectApplicationForm(forms.Form):
         required=True,
     )
     finances_needed = forms.CharField(
-        label="Describe financial/money needs",
+        label="What is the budget for this project?",
         widget=forms.Textarea(attrs={"rows": 3}),
         required=True,
     )

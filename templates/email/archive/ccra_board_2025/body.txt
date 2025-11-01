@@ -1,0 +1,20 @@
+Hello {{ first_name }},
+
+*You are receiving this email because you have a Philly Bike Action account and you live within the RCO boundaries of Center City Residents Association (CCRA).*
+
+**Cast your vote on May 21st** to elect bike-friendly Board Members to your neighborhood's registered community organization (RCO), the [Center City Residents Association](https://www.centercityresidents.org/).
+
+Voting will take place **in-person** at the [CCRA Annual Meeting](https://members.centercityresidents.org/atlas/events/41/details) on Wednesday, **May 21** at **6pm** at **Trinity Memorial Church**, **2212 Spruce St.**, Philadelphia PA 19103\. Members can [register here](https://members.centercityresidents.org/atlas/events-v4/register/41) to signal their intent to attend.
+
+Letters of support from RCO Boards are a key way City Council determines "community support" for initiatives like new and protected bike lanes. ***It's critical that residents elect a bike-friendly Board that will support the Spruce/Pine bike lane safety upgrades.***
+
+Philly Bike Action encourages you to show your support for the following bike-friendly candidates:
+
+* **Duncan Adkins**  
+* **Alexander Roederer**
+
+These candidates will be part of a slate of 12 board candidates who will likely be voted in by unanimous consent. Showing up is the perfect opportunity to put our voices behind bike friendly leadership in the neighborhood and build support for bike infrastructure with CCRA.
+
+**Only CCRA Members can vote.** Become a Member [here](https://www.centercityresidents.org/residential-membership.html) for as little as $45/year. Members that joined this month should bring a screenshot of their receipt.
+
+**Philly Bike Action**

@@ -13,7 +13,11 @@ def maillink(request, slug):
         raise Http404
 
     response = HttpResponse(content="", status=303)
-    response["Location"] = maillink_object.link
+    response["Location"] = maillink_object.link(
+        first_name=request.GET.get("first_name"),
+        last_name=request.GET.get("last_name"),
+        address=request.GET.get("address"),
+    )
 
     return response
 
@@ -23,7 +27,25 @@ def view(request, slug):
     if maillink_object is None:
         raise Http404
 
-    return render(request, "maillink.html", context={"maillink": maillink_object})
+    data = {
+        "first_name": request.GET.get("first_name"),
+        "last_name": request.GET.get("last_name"),
+        "address": request.GET.get("address"),
+    }
+
+    return render(
+        request,
+        "maillink.html",
+        context={
+            "maillink": maillink_object,
+            "mail_link": maillink_object.link(
+                first_name=request.GET.get("first_name"),
+                last_name=request.GET.get("last_name"),
+                address=request.GET.get("address"),
+            ),
+            **data,
+        },
+    )
 
 
 def flyer(request, slug):

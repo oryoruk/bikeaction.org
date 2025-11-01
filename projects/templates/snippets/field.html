@@ -1,6 +1,8 @@
+  <div class="formfield" style="{% if invisible %}display: none;{% endif %}">
     <p>
-      {{ field.label_tag }}
+      {% if field.label != "hidden" %}{{ field.label_tag }}{% endif %}
       {{ field.errors }}
       {{ field }}
-      <span class="helptext">{{ field.help_text }}</span>
+      <span class="helptext">{{ field.help_text|safe }}</span>
     </p>
+  </div>

@@ -1,0 +1,21 @@
+Hi {{ first_name }},
+
+*You are receiving this email because you RSVP’d online for this event.*
+
+<span style="width: 80%; text-align: center;"><img style="width: 100%; border-radius: 5px; border: solid grey;" src="templates/email/2nd-birthday-rsvp/graphic.jpg"></span>
+
+Join us **Saturday, April 26th**, 1-4 pm at the **Lemon Hill Picnic Pavilion** in East Fairmount Park for a picnic & birthday celebration of all our achievements after just two years!
+
+We will be holding a **potluck-style** picnic, *rain or shine*.
+
+If you can **bring a dish to share**, sign up [here](https://forms.gle/jMmR7rYWp3xJsgc9A), or if you prefer to contribute towards catered food, **make a donation** on [our website](https://bikeaction.org/campaigns/pba-2nd-birthday-potluck-picnic/), but all members are welcome regardless of their ability to contribute. **Drinks are BYO\!**
+
+**Partners and kids are welcome** \- please **fill out** the [google form](https://forms.gle/jMmR7rYWp3xJsgc9A) to RSVP for additional guests.
+
+If you are **no longer able to attend**, please let us know by replying to this email so we know how many people to plan for.
+
+The picnic pavilion is at the top of Lemon Hill (just adjacent to Lemon Hill Mansion). It is close to the Schuylkill River Trail (within 500 yards) for easy bike access, and has street parking available throughout the surrounding Fairmount Park. Bathrooms and water fountains are located a few minutes walk away at the Lloyd Hall rec center.
+
+**Directions**: [https://maps.app.goo.gl/NgDjAdoNnDkF2GrH9](https://maps.app.goo.gl/NgDjAdoNnDkF2GrH9)
+
+\- Philly Bike Action

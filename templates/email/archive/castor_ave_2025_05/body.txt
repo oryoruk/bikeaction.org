@@ -1,0 +1,24 @@
+Hello {{ first_name }},
+
+*You are receiving this email from [Philly Bike Action](https://bikeaction.org/) because you live in {{ district }} and have a PBA account.*
+
+Tell the City and PennDOT that you support the Castor Ave Traffic Safety and Beautification [Project](https://www.pa.gov/agencies/penndot/news-and-media/newsroom/district-6/2025/penndot--city-of-philadelphia--septa-to-host-public-meeting-.html)\! Make your voice heard at the open house and town hall on **Wednesday, May 14** at the **Northeast High Cafeteria (1601 Cottman Ave)**. 
+
+Event Schedule: Open House at 4pm, Town Hall at 5pm
+
+We need your support because this project would add the following along a 1.7-mile stretch of Castor Avenue:
+
+- a “road diet” to reduce speeds and calm traffic;  
+- curb extensions and boarding islands for SEPTA transit;  
+- Parking-separated bike lanes in both directions;  
+- ADA compliant curb ramps and sidewalk replacement.
+
+<span style="width: 80%; text-align: center;"><img style="width: 100%; border-radius: 5px; border: solid grey;" src="templates/email/castor_ave_2025_05/images/castor-ave.png"><br><i style="font-size:smaller">Visual depiction of new Castor Ave with left turn lanes, SEPTA boarding islands, and parking separated bike lanes in both directions</i></span>
+
+**Traffic safety opponents are [mobilizing](https://metrophiladelphia.com/castor-avenue-project-northeast-philadelphia/) to stop this crucial “Vision Zero” project – we need your support\!** 
+
+During the town hall portion, project organizers will have signs to hold up to make support visible.
+
+Want to connect with the project organizers? Email [safercastorave@gmail.com](mailto:safercastorave@gmail.com)
+
+**Philly Bike Action**

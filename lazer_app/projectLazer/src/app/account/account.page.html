@@ -1,0 +1,50 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-icon
+        [style.display]="updateService.needsUpdate? '': 'none'"
+        color="success"
+        name="refresh-circle-outline"
+        size="large"
+      ></ion-icon>
+    </ion-buttons>
+    <ion-title>Laser Vision</ion-title>
+    <ion-buttons slot="end">
+      <ion-icon
+        class="onlineIndicator indicatorGreen"
+        [style.display]="onlineStatus.online? '': 'none'"
+        name="cloud"
+      ></ion-icon>
+      <ion-icon
+        class="onlineIndicator indicatorRed"
+        [style.display]="onlineStatus.online? 'none': ''"
+        name="cloud-offline"
+      ></ion-icon>
+      <ion-spinner
+        class="onlineIndicator"
+        [style.display]="(onlineStatus.online === null)? '': 'none'"
+        name="dots"
+      ></ion-spinner>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+  <ion-grid class="ion-padding">
+    <ion-row *ngIf="accountService.loggedIn">
+      <ion-col>Logged in as</ion-col>
+      <ion-col>{{ accountService.username }}</ion-col>
+    </ion-row>
+    <ion-row *ngIf="accountService.loggedIn">
+      <ion-col colspan="2">
+        <ion-button (click)="accountService.logOut()">Log Out</ion-button>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="!accountService.loggedIn">
+      <ion-col colspan="2">
+        <ion-button [routerLink]="['/login']">Log In</ion-button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>

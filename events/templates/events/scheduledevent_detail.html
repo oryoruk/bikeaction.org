@@ -1,5 +1,8 @@
 {% extends 'base.html' %}
+{% load tz %}
 {% load markdownify %}
+{% load share_tags %}
+{% load qr_code %}
 
 {% block extra_head %}
 {% with event=object %}
@@ -14,7 +17,7 @@
 
 {% block content %}
 <div class="event-nav-top">
-  <a href="{% url 'events_list' %}"><span><i class='bx bx-chevrons-left'></i> All Events</span></a>
+  <a href="{% url 'events_list' %}"><span><i class='fa-solid fa-angles-left'></i> All Events</span></a>
 </div>
 
 {% with event=object %}
@@ -32,7 +35,7 @@
   <div class="event-details">
     <div class="event-date">{{ event.start_datetime|date:"F j @ g:i a" }}{% if event.end_datetime %} - {{ event.end_datetime|date:"g:i a" }}{% endif %}</div>
     <div class="event-title">{{ event.title }}</div>
-    <div class="event-location"><i class="bx bxs-map"></i> {{ event.location }}</div>
+    <div class="event-location"><i class="fa-solid fa-map-location-dot"></i> {{ event.location }}</div>
     {% if event.status != 'completed' %}
     <div class="button-holder">
       {% if request.user.is_authenticated %}
@@ -58,37 +61,47 @@
   </div>
 </div>
 
-<div class="add-to-calendar" style="text-align: center;">
 <hr>
-<br>
-<add-to-calendar-button
-  name="{{ event.title }}"
-  startDate="{{ event.start_datetime|date:"Y-m-d" }}"
-  startTime="{{ event.start_datetime|date:"G:i" }}"
-  {% if event.end_datetime %}endTime="{{ event.end_datetime|date:"G:i" }}"{% endif %}
-  timeZone="America/New_York"
-  location="{{ event.location }}"
-  description="{{ event.description }}"
-  lightMode="bodyScheme"
-  buttonStyle="flat"
-  hideCheckmark="True"
-  size="4|4|4"
-  options="'Google','Outlook.com','Microsoft365','Apple'"
-  hideBackground="True"
-></add-to-calendar-button>
+
+<div class="calendar-subscribe">
+  <div>Add to calendar:</div>
+  {% localtime off %}
+  <span class="calendar-share"><a href="https://calendar.google.com/calendar/render?action=TEMPLATE&dates={{ event.start_datetime|date:"Ymd\THis\Z"|urlencode }}%2F{{ event.end_datetime|date:"Ymd\THis\Z"|urlencode }}&details={{ event.description|urlencode:"" }}&location={{ event.location|urlencode:"" }}&text={{ event.title|urlencode:"" }}" target="_blank"><i class="fa-brands fa-google"></i> Google</a></span>
+  <span class="calendar-share"><a href="https://outlook.live.com/calendar/0/action/compose?allday=false&body={{ event.description|urlencode:"" }}&enddt={{ event.end_datetime|date:"Y-m-d\TH:i:s\Z" }}&location={{ event.location|urlencode:"" }}&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt={{ event.start_datetime|date:"Y-m-d\TH:i:s\Z"|urlencode }}&subject={{ event.title|urlencode:"" }}" target="_blank"><i class="fa-brands fa-microsoft"></i> Outlook 365</a></span>
+  <span class="calendar-share"><a href="https://outlook.office.com/calendar/0/action/compose?allday=false&body={{ event.description|urlencode:"" }}&enddt={{ event.end_datetime|date:"Y-m-d\TH:i:s\Z" }}&location={{ event.location|urlencode:"" }}&path=%2Fcalendar%2Faction%2Fcompose&rru=addevent&startdt={{ event.start_datetime|date:"Y-m-d\TH:i:s\Z"|urlencode }}&subject={{ event.title|urlencode:"" }}" target="_blank"><i class="fa-brands fa-microsoft"></i> Outlook Live</a></span>
+  {% endlocaltime %}
+  <span class="calendar-share"><a href="data:text/calendar,{{ event.ics|urlencode }}" download="{{ event.slug }}.ics"><i class="fa-brands fa-apple"></i> Apple</a></span>
 </div>
+
+<hr>
+
+<div class="calendar-subscribe">
+  <div>Share:</div>
+  {% with share_url=request.build_absolute_uri %}
+  {% with share_title="Philly Bike Action Event! {{ event.title }}" %}
+  <span class="calendar-share">{% post_to_reddit  share_title share_url "<i class=\"fa-brands fa-reddit\"></i> Reddit" %}</span>
+  <span class="calendar-share">{% post_to_twitter share_title share_url "<i class=\"fa-brands fa-twitter\"></i> Twitter" %}</span>
+  <span class="calendar-share">{% post_to_bluesky share_title share_url "<i class=\"fa-brands fa-bluesky\"></i> Bluesky" %}</span>
+  <span class="calendar-share"><a href="{% qr_url_from_text share_url image_format='png' %}" download="qr-code-{{ event.slug }}.png"><i class="fa-solid fa-qrcode"></i> QR Code</a></span>
+  {% endwith %}
+  {% endwith %}
+  <span class="calendar-share">{% copy_to_clipboard share_url "<i class=\"fa-solid fa-copy\"></i> Copy URL" %}</span>
+  {% add_copy_script %}
+</div>
+
 {% endwith %}
+
 
 <div class="pagination">
   <div class="pagination-nav next">
     {% if next_event %}
-    <span><a href="{% url 'event_detail' next_event.slug %}">{{ next_event.title }} <i class='bx bx-chevrons-right'></i></a></span>
+    <span><a href="{% url 'event_detail' next_event.slug %}">{{ next_event.title }} <i class='fa-solid fa-angles-right'></i></a></span>
     {% endif %}
   </div>
   <br><br>
   <div class="pagination-nav previous">
     {% if previous_event %}
-    <span><a href="{% url 'event_detail' previous_event.slug %}"><i class='bx bx-chevron-left'></i> {{ previous_event.title }}</a></span>
+    <span><a href="{% url 'event_detail' previous_event.slug %}"><i class='fa-solid fa-angle-left'></i> {{ previous_event.title }}</a></span>
     {% endif %}
   </div>
 </div>

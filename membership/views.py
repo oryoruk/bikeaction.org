@@ -1,8 +1,7 @@
-import sesame.utils
 import stripe
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -20,8 +19,7 @@ from djstripe.models import (
 
 from membership.forms import RecurringDonationSetupForm
 from membership.models import Donation, DonationProduct, DonationTier
-from pbaabp.email import send_email_message
-from profiles.forms import BaseProfileSignupForm
+from pbaabp.tasks import create_pba_account
 
 _CUSTOM_FIELDS = [
     {
@@ -122,49 +120,25 @@ def complete_checkout_session(request):
                 street_address = session["customer_details"]["address"]["line1"]
                 zip_code = session["customer_details"]["address"]["postal_code"]
                 newsletter_opt_in = bool(int(custom_fields["newsletter_opt_in"]))
-                form = BaseProfileSignupForm(
-                    {
-                        "first_name": first_name,
-                        "last_name": last_name,
-                        "street_address": street_address,
-                        "zip_code": zip_code,
-                        "email": email,
-                        "username": email,
-                        "newsletter_opt_in": newsletter_opt_in,
-                        "password1": "Password@99",
-                        "password2": "Password@99",
-                    }
-                )
-                if form.is_valid():
-                    user = form.save(request)
-                    user.set_unusable_password()
-                    user.save()
-                    stripe_customer = stripe.Customer.retrieve(subscription.customer.id)
-                    customer = Customer._get_or_retrieve(stripe_customer["id"])
-                    customer.subscriber = user
-                    customer.save()
-                    link = reverse("sesame_login")
-                    link = request.build_absolute_uri(link)
-                    link += sesame.utils.get_query_string(user)
-                    link += f"&next={reverse('account_set_password')}"
-                    subject = f"Welcome! Create a password for {request.get_host()}"
-                    message = f"""\
-Hello {user.first_name},
 
-We created an account on {request.get_host()} so that you can manage your
-new recurring donation to Philly Bike Action. Follow the link below to
-set a password for your account.
-
-* [Create your password]({link})
-
-NOTE: This link will expire in 7 days!
-
-Thank you for being a part of the action!
-"""
-                    send_email_message(
-                        None, None, [user.email], None, message=message, subject=subject
+                user = get_user_model().objects.filter(email=email).first()
+                if user is None:
+                    user = create_pba_account(
+                        first_name=first_name,
+                        last_name=last_name,
+                        street_address=street_address,
+                        zip_code=zip_code,
+                        email=email,
+                        newsletter_opt_in=newsletter_opt_in,
+                        subscription=True,
+                        _return=True,
                     )
                     login(request, user, backend=settings.AUTHENTICATION_BACKENDS[0])
+
+                stripe_customer = stripe.Customer.retrieve(subscription.customer.id)
+                customer = Customer._get_or_retrieve(stripe_customer["id"])
+                customer.subscriber = user
+                customer.save()
             payment_method = subscription.default_payment_method
             if subscription.customer.default_payment_method is None:
                 subscription.customer.add_payment_method(payment_method, set_default=True)
@@ -241,9 +215,23 @@ def create_one_time_donation_checkout_session(request):
             return_url=request.build_absolute_uri(
                 reverse("complete_one_time_donation_checkout_session")
             ),
+            custom_fields=[
+                {
+                    "key": "comment",
+                    "label": {"type": "custom", "custom": "Comment"},
+                    "optional": True,
+                    "type": "text",
+                    "text": {"maximum_length": 255},
+                }
+            ],
             customer=(
                 request.user.djstripe_customers.first().id
                 if request.user.is_authenticated and request.user.djstripe_customers.first()
+                else None
+            ),
+            customer_email=(
+                request.user.email
+                if request.user.is_authenticated and not request.user.djstripe_customers.first()
                 else None
             ),
         )
@@ -265,11 +253,14 @@ def complete_one_time_donation_checkout_session(request):
     if session["status"] == "complete":
         _session = Session()._get_or_retrieve(session["id"], expand=["line_items"])
         _session.save()
+        _line_items = _session.line_items.get("data")
+        if _line_items is None:
+            _line_items = _session.line_items
         donation_products = DonationProduct.objects.filter(
-            stripe_product__id__in=[li["price"]["product"] for li in _session.line_items]
+            stripe_product__id__in=[li["price"]["product"] for li in _line_items]
         ).all()
         if donation_products:
-            for line_item in _session.line_items:
+            for line_item in _line_items:
                 donation_product = DonationProduct.objects.filter(
                     stripe_product__id=line_item["price"]["product"]
                 ).first()
@@ -278,6 +269,12 @@ def complete_one_time_donation_checkout_session(request):
                         donation_product=donation_product, amount=line_item["amount_total"] / 100
                     )
                     _d.save()
+        custom_fields = {d["key"]: d[d["type"]]["value"] for d in session["custom_fields"]}
+        if custom_fields.get("comment"):
+            _d = Donation(
+                amount=_line_items[0]["amount_total"] / 100, comment=custom_fields.get("comment")
+            )
+            _d.save()
         if redirect_to := request.session.pop("_redirect_after_donation", default=None):
             messages.add_message(request, messages.INFO, "Thank you for your donation!")
             return redirect(redirect_to)

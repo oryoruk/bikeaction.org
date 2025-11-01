@@ -1,6 +1,6 @@
 {% load humanize i18n %}
 
-{% if petition.signatures.all %}
+{% if petition.show_submissions and petition.signatures.all %}
 <div class="signatures">
   <h2>{{ petition.signatures.count }} Submissions{% if petition.campaign.status == "active" %} So Far!{% endif %}</h2>
   {% if petition.signature_goal %}

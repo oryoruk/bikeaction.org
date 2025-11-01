@@ -4,9 +4,12 @@
     {% trans "Sign Out" %}
 {% endblock head_title %}
 {% block content %}
+<div class="form-header">
     {% element h1 %}
         {% trans "Sign Out" %}
     {% endelement %}
+</div>
+<div class="form-container">
     <p>{% trans 'Are you sure you want to sign out?' %}</p>
     {% url 'account_logout' as action_url %}
     {% element form method="post" action=action_url no_visible_fields=True %}
@@ -20,10 +23,13 @@
         {% endslot %}
         {% slot actions %}
             <div class="button-holder">
-            {% element button type="submit" %}
+                <button class="submit-button" type="submit">
                 {% trans 'Sign Out' %}
-            {% endelement %}
+                </button>
             </div>
         {% endslot %}
     {% endelement %}
+</div>
+<br>
+<br>
 {% endblock content %}

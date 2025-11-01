@@ -1,0 +1,10 @@
+/media
+/lazer_app/projectLazer/.angular
+/lazer_app/projectLazer/.browserslistrc
+/lazer_app/projectLazer/.editorconfig
+/lazer_app/projectLazer/.gitignore
+/lazer_app/projectLazer/.tool-versions
+/lazer_app/projectLazer/.vscode
+/lazer_app/projectLazer/node_modules
+/lazer_app/projectLazer/www
+/lazer_app/projectLazer/*.swp

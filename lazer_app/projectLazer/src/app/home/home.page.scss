@@ -1,0 +1,46 @@
+* {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+#container {
+  text-align: center;
+
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+#container strong {
+  font-size: 20px;
+  line-height: 26px;
+}
+
+#container p {
+  font-size: 16px;
+  line-height: 22px;
+
+  color: #8c8c8c;
+
+  margin: 0;
+}
+
+#container a {
+  text-decoration: none;
+}
+
+#imageContainer {
+  position: relative;
+  margin: 0 auto;
+  min-height: 30vh;
+  max-height: 50vh;
+  margin-bottom: 1em;
+  width: 75%;
+}
+#imagePreview {
+  position: absolute;
+}
