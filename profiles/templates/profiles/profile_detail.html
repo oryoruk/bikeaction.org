@@ -223,10 +223,10 @@
           <td>{% if nomination.nominator.socialaccount_set.all %}@{{ nomination.nominator.socialaccount_set.first.extra_data.username }}{% endif %}</td>
           <td>{{ nomination.created_at|date:"M d, Y" }}</td>
           <td>
-            {% if not nomination.nominee.election.is_nominations_closed %}
+            {% if not nomination.nominee.election.is_acceptance_period_closed %}
             <a href="{% url 'nomination_respond' nomination.nominee.election.slug nomination.id %}" class="homepage-button">Respond</a>
             {% else %}
-            <span style="color: #999;">Nominations Closed</span>
+            <span style="color: #999;">Acceptance Period Closed</span>
             {% endif %}
           </td>
         </tr>
@@ -303,7 +303,7 @@
   <h2>Nominations Received</h2>
 
   {% for nominee in responded_nominees %}
-  {% if not nominee.election.is_nominations_closed %}
+  {% if not nominee.election.is_acceptance_period_closed %}
   <p style="margin: 10px 0;">
     <a href="{% url 'nominee_profile_edit' nominee.election.slug nominee.id %}" class="homepage-button" style="font-size: 1.5em;">Manage Nominee Profile</a>
   </p>
@@ -328,7 +328,7 @@
           <td><strong>{{ nomination.get_acceptance_status_display }}</strong></td>
           <td>{{ nomination.acceptance_date|date:"M d, Y" }}</td>
           <td>
-            {% if not nomination.nominee.election.is_nominations_closed %}
+            {% if not nomination.nominee.election.is_acceptance_period_closed %}
               {% if nomination.nominator == nomination.nominee.user %}
               <a href="{% url 'nomination_respond' nomination.nominee.election.slug nomination.id %}">Withdraw Nomination</a>
               {% else %}

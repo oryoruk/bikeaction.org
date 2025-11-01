@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-header">
+  <h1>Nominees for {{ election.title }}</h1>
+</div>
+
+<div class="form-container">
+  <div class="button-holder">
+    <a href="{% url 'election_detail' election.slug %}" class="secondary-button">Back to Election</a>
+  </div>
+
+  {% if nominees %}
+  <div class="nominees-list">
+    {% for nominee in nominees %}
+    <div class="nominee-card" style="margin-bottom: 2rem; padding: 1.5rem; border: 1px solid #ddd; border-radius: 8px;">
+      <div style="display: flex; gap: 1.5rem; margin-bottom: 1rem;">
+        {% if nominee.photo %}
+        <div style="flex-shrink: 0;">
+          <img src="{{ nominee.photo.url }}" alt="{{ nominee.get_display_name }}"
+               style="width: 120px; height: 120px; object-fit: cover; border-radius: 8px;">
+        </div>
+        {% endif %}
+        <div style="flex-grow: 1;">
+          <h2 style="margin-top: 0;">
+            <a href="{% url 'nominee_detail' election.slug nominee.get_slug %}" style="color: inherit; text-decoration: none;">
+              {{ nominee.get_display_name }}
+            </a>
+            {% if nominee.user.profile.district %}
+            <span style="color: #666; font-weight: normal; font-size: 0.9em;">
+              ({{ nominee.user.profile.district.name }})
+            </span>
+            {% endif %}
+          </h2>
+          <button onclick="toggleNominations({{ forloop.counter }})"
+                  id="toggle-btn-{{ forloop.counter }}"
+                  data-count="{{ nominee.accepted_nominations|length }}"
+                  style="background: none; border: none; color: #007bff; cursor: pointer; padding: 0; font-size: 1em; text-decoration: underline;">
+            View {{ nominee.accepted_nominations|length }} nomination{{ nominee.accepted_nominations|length|pluralize }}
+          </button>
+        </div>
+      </div>
+
+      <div class="nomination-statements" id="nominations-{{ forloop.counter }}" style="display: none;">
+        {% for nomination in nominee.accepted_nominations %}
+        <div style="{% if not forloop.first %}margin-top: 1rem;{% endif %} padding: 1rem; background-color: #f9f9f9; border-left: 3px solid {% if nomination.nominator == nominee.user %}#d8107d{% else %}#83bd56{% endif %}; border-radius: 4px;">
+          <p style="margin: 0;">{{ nomination.nomination_statement|linebreaks }}</p>
+          <p style="margin: 0.5rem 0 0 0; font-size: 0.9em; color: #666;">
+            {% if nomination.nominator == nominee.user %}
+            — Self-nomination
+            {% else %}
+            — Nominated by {{ nomination.nominator.first_name }} {{ nomination.nominator.last_name.0 }}.
+            {% endif %}
+          </p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No nominees have accepted their nominations yet.</p>
+  {% endif %}
+
+  <div class="button-holder" style="margin-top: 2rem;">
+    <a href="{% url 'election_detail' election.slug %}" class="secondary-button">Back to Election</a>
+  </div>
+</div>
+
+<script>
+function toggleNominations(id) {
+  const container = document.getElementById('nominations-' + id);
+  const button = document.getElementById('toggle-btn-' + id);
+  const nominationCount = parseInt(button.getAttribute('data-count'));
+
+  if (container.style.display === 'none') {
+    container.style.display = 'block';
+    button.textContent = 'Hide nomination' + (nominationCount > 1 ? 's' : '');
+  } else {
+    container.style.display = 'none';
+    button.textContent = 'View ' + nominationCount + ' nomination' + (nominationCount > 1 ? 's' : '');
+  }
+}
+</script>
+{% endblock %}

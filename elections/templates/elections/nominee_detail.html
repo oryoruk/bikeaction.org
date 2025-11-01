@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-header">
+  <h1>{{ nominee.get_display_name }}</h1>
+  {% if nominee.user.profile.district %}
+  <p style="color: #666; font-size: 1.1em; margin-top: 0.5rem;">
+    {{ nominee.user.profile.district.name }}
+  </p>
+  {% endif %}
+</div>
+
+<div class="form-container">
+  <div class="button-holder">
+    <a href="{% url 'election_nominees' election.slug %}" class="secondary-button">Back to All Nominees</a>
+  </div>
+
+  <div class="nominee-profile" style="margin: 2rem 0;">
+    {% if nominee.photo %}
+    <div style="text-align: center; margin-bottom: 2rem;">
+      <img src="{{ nominee.photo.url }}" alt="{{ nominee.get_display_name }}"
+           style="width: 200px; height: 200px; object-fit: cover; border-radius: 8px;">
+    </div>
+    {% endif %}
+
+    <h2>Nomination Statements ({{ nominee.accepted_nominations|length }})</h2>
+    <div class="nomination-statements">
+      {% for nomination in nominee.accepted_nominations %}
+      <div style="{% if not forloop.first %}margin-top: 1rem;{% endif %} padding: 1rem; background-color: #f9f9f9; border-left: 3px solid {% if nomination.nominator == nominee.user %}#d8107d{% else %}#83bd56{% endif %}; border-radius: 4px;">
+        <p style="margin: 0;">{{ nomination.nomination_statement|linebreaks }}</p>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.9em; color: #666;">
+          {% if nomination.nominator == nominee.user %}
+          — Self-nomination
+          {% else %}
+          — Nominated by {{ nomination.nominator.first_name }} {{ nomination.nominator.last_name.0 }}.
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="button-holder" style="margin-top: 2rem;">
+    <a href="{% url 'election_nominees' election.slug %}" class="secondary-button">Back to All Nominees</a>
+  </div>
+</div>
+{% endblock %}

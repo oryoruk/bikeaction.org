@@ -56,6 +56,13 @@ class Election(models.Model):
         """Check if nominations have closed."""
         return timezone.now() >= self.nominations_close
 
+    def is_acceptance_period_closed(self):
+        """Check if the acceptance period has closed (7 days after nominations close)."""
+        import datetime
+
+        acceptance_deadline = self.nominations_close + datetime.timedelta(days=7)
+        return timezone.now() >= acceptance_deadline
+
     def is_voting_open(self):
         """Check if voting is currently open."""
         now = timezone.now()
@@ -143,6 +150,22 @@ class Nominee(models.Model):
         last_name = self.user.last_name or ""
         last_initial = f"{last_name[0]}." if last_name else ""
         return f"{first_name} {last_initial}".strip()
+
+    def get_slug(self):
+        """
+        Generate a URL-safe slug for the nominee based on first name + last initial.
+        Format: firstname-l
+        """
+        from django.utils.text import slugify
+
+        first_name = self.user.first_name or ""
+        last_name = self.user.last_name or ""
+        last_initial = last_name[0].lower() if last_name else ""
+
+        if self.public_display_name:
+            return slugify(self.public_display_name)
+
+        return slugify(f"{first_name}-{last_initial}")
 
     def send_notification_email(self, nomination):
         """Send email notification to nominee for a specific nomination."""

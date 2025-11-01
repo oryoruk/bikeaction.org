@@ -8,6 +8,12 @@ urlpatterns = [
     # Nominee search (HTMX endpoint) - must come before election_slug pattern
     path("nominee-search/", views.nominee_search, name="nominee_search"),
     path("<slug:election_slug>/", views.election_detail, name="election_detail"),
+    path("<slug:election_slug>/nominees/", views.election_nominees, name="election_nominees"),
+    path(
+        "<slug:election_slug>/nominees/<slug:nominee_slug>/",
+        views.nominee_detail,
+        name="nominee_detail",
+    ),
     # Nomination management (accessed via profile links)
     path(
         "<slug:election_slug>/nominate/",
@@ -29,12 +35,6 @@ urlpatterns = [
         "<slug:election_slug>/nominations/<uuid:pk>/",
         views.nomination_view,
         name="nomination_view",
-    ),
-    # Staff: view all nominations for an election
-    path(
-        "<slug:election_slug>/nominations/",
-        views.nomination_list,
-        name="nomination_list",
     ),
     # Nominee profile management
     path(

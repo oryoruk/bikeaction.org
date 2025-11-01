@@ -215,25 +215,6 @@ def nomination_view(request, election_slug, pk):
     )
 
 
-@login_required
-def nomination_list(request, election_slug):
-    """List all nominations for an election (staff only)."""
-    if not request.user.is_staff:
-        messages.error(request, "You do not have permission to view this page.")
-        return redirect("election_detail", election_slug=election_slug)
-
-    election = get_object_or_404(Election, slug=election_slug)
-    nominations = Nomination.objects.filter(
-        nominee__election=election, draft=False
-    ).select_related("nominee", "nominator")
-
-    return render(
-        request,
-        "elections/nomination_list.html",
-        {"election": election, "nominations": nominations},
-    )
-
-
 def election_detail(request, election_slug):
     """View election details and nomination status."""
     election = get_object_or_404(Election, slug=election_slug)
@@ -253,6 +234,103 @@ def election_detail(request, election_slug):
             "user_nominations": user_nominations,
             "can_nominate": request.user.is_authenticated and election.is_nominations_open(),
         },
+    )
+
+
+def election_nominees(request, election_slug):
+    """Public view of all nominees who have accepted at least one nomination."""
+    election = get_object_or_404(Election, slug=election_slug)
+
+    # Don't show nominees until nominations have closed
+    if not election.is_nominations_closed():
+        messages.info(request, "Nominees will be visible after nominations close.")
+        return redirect("election_detail", election_slug=election.slug)
+
+    # Get nominee IDs who have accepted at least one nomination
+    nominee_ids = (
+        Nominee.objects.filter(
+            election=election,
+            nominations__acceptance_status=Nomination.AcceptanceStatus.ACCEPTED,
+            nominations__draft=False,
+        )
+        .values_list("id", flat=True)
+        .distinct()
+    )
+
+    # Fetch the nominees in random order
+    nominees = (
+        Nominee.objects.filter(id__in=nominee_ids)
+        .select_related("user", "user__profile")
+        .prefetch_related("nominations__nominator")
+        .order_by("?")  # Random order
+    )
+
+    # Filter to get only accepted nominations for each nominee
+    # Sort so self-nominations appear first
+    for nominee in nominees:
+        accepted = nominee.nominations.filter(
+            acceptance_status=Nomination.AcceptanceStatus.ACCEPTED, draft=False
+        ).select_related("nominator")
+
+        # Separate self-nominations and other nominations
+        self_noms = [n for n in accepted if n.nominator == nominee.user]
+        other_noms = [n for n in accepted if n.nominator != nominee.user]
+
+        # Combine with self-nominations first
+        nominee.accepted_nominations = self_noms + other_noms
+
+    return render(
+        request,
+        "elections/election_nominees.html",
+        {"election": election, "nominees": nominees},
+    )
+
+
+def nominee_detail(request, election_slug, nominee_slug):
+    """Public view of an individual nominee with their nomination statements."""
+    election = get_object_or_404(Election, slug=election_slug)
+
+    # Don't show nominees until nominations have closed
+    if not election.is_nominations_closed():
+        messages.info(request, "Nominees will be visible after nominations close.")
+        return redirect("election_detail", election_slug=election.slug)
+
+    # Find the nominee by matching the slug
+    # We need to check all nominees with accepted nominations
+    nominees = (
+        Nominee.objects.filter(
+            election=election,
+            nominations__acceptance_status=Nomination.AcceptanceStatus.ACCEPTED,
+            nominations__draft=False,
+        )
+        .distinct()
+        .select_related("user", "user__profile")
+        .prefetch_related("nominations__nominator")
+    )
+
+    nominee = None
+    for n in nominees:
+        if n.get_slug() == nominee_slug:
+            nominee = n
+            break
+
+    if not nominee:
+        messages.error(request, "Nominee not found.")
+        return redirect("election_nominees", election_slug=election.slug)
+
+    # Get accepted nominations, sorted with self-nominations first
+    accepted = nominee.nominations.filter(
+        acceptance_status=Nomination.AcceptanceStatus.ACCEPTED, draft=False
+    ).select_related("nominator")
+
+    self_noms = [n for n in accepted if n.nominator == nominee.user]
+    other_noms = [n for n in accepted if n.nominator != nominee.user]
+    nominee.accepted_nominations = self_noms + other_noms
+
+    return render(
+        request,
+        "elections/nominee_detail.html",
+        {"election": election, "nominee": nominee},
     )
 
 
@@ -278,9 +356,12 @@ def nomination_respond(request, election_slug, pk):
 
     is_self_nomination = nomination.nominator == nomination.nominee.user
 
-    # Check if nominations period has closed
-    if election.is_nominations_closed():
-        messages.error(request, "Nominations have closed. You can no longer change your response.")
+    # Check if acceptance period has closed (7 days after nominations close)
+    if election.is_acceptance_period_closed():
+        messages.error(
+            request,
+            "The acceptance period has closed. You can no longer change your response.",
+        )
         return redirect("profile")
 
     # Check if nominee profile is complete before allowing acceptance
@@ -404,9 +485,12 @@ def nominee_profile_edit(request, election_slug, nominee_id):
     election = get_object_or_404(Election, slug=election_slug)
     nominee = get_object_or_404(Nominee, id=nominee_id, election=election, user=request.user)
 
-    # Check if nominations period has closed
-    if election.is_nominations_closed():
-        messages.error(request, "Nominations have closed. You can no longer update your profile.")
+    # Check if acceptance period has closed (allow profile edits during acceptance period)
+    if election.is_acceptance_period_closed():
+        messages.error(
+            request,
+            "The acceptance period has closed. You can no longer update your profile.",
+        )
         return redirect("profile")
 
     # Get the next URL from query params (for redirecting back after completion)
