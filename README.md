@@ -65,4 +65,3 @@ Deployments to [apps.bikeaction.org](https://apps.bikeaction.org) occur on merge
 
 You can watch the progress of the deploy to our [dokku](https://dokku.com) instance
 in the GitHub Actions output.
-

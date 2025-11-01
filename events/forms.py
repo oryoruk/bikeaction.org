@@ -1,4 +1,6 @@
 from django import forms
+from django_recaptcha.fields import ReCaptchaField
+from django_recaptcha.widgets import ReCaptchaV2Invisible
 
 from events.models import EventRSVP, EventSignIn
 
@@ -15,6 +17,8 @@ class EventRSVPForm(forms.ModelForm):
     first_name = forms.CharField(required=True)
     last_name = forms.CharField(required=True)
     email = forms.EmailField(required=True, max_length=100)
+
+    captcha = ReCaptchaField(widget=ReCaptchaV2Invisible)
 
 
 class EventSignInForm(forms.ModelForm):

@@ -62,7 +62,22 @@
 
   <h2>Project overview</h2>
   {% include 'snippets/field.html' with field=form.mission_relevance %}
-  {% include 'snippets/field.html' with field=form.success_criteria %}
+  <div class="formfield">
+    <p>
+      {{ form.success_criteria.label_tag }}
+      <div style="font-size: smaller; padding-left: 1em; margin-bottom: 1em;">
+        <p style="text-align: left;">You must include a specific timeline or end date.</p>
+        <ul>
+          <li>Good: deliver the petition to City Council by June</li>
+          <li>Bad: when the bike lane is finally installed</li>
+        </ul>
+      </div>
+      {{ form.success_criteria.errors }}
+      {{ form.success_criteria }}
+      <span class="helptext">{{ form.success_criteria.help_text|safe }}</span>
+    </p>
+  </div>
+
   {% include 'snippets/field.html' with field=form.name_use %}
   {% include 'snippets/field.html' with field=form.recruitment %}
   {% include 'snippets/field.html' with field=form.external_orgs %}
@@ -94,7 +109,23 @@
   {% include 'snippets/field.html' with field=form.equipment_needed %}
   {% include 'snippets/field.html' with field=form.volunteers_needed %}
   {% include 'snippets/field.html' with field=form.promotion_needed %}
-  {% include 'snippets/field.html' with field=form.finances_needed %}
+  <div class="formfield">
+    <p>
+      {{ form.finances_needed.label_tag }}
+      <div style="font-size: smaller; padding-left: 1em; margin-bottom: 1em;">
+        <p style="text-align: left;">Based on past projects, we have recommended budgets to use as a baseline:</p>
+        <ul>
+          <li>Bike Lane Clean up - $50 (trash bags, coffee, snacks, etc.)</li>
+          <li>Tabling Event - Tabling Fee + $20 (printing, snacks, etc.)</li>
+          <li>Bike Lane/Campaign Project - $100</li>
+        </ul>
+        <p style="text-align: left;">Additional funding can be approved by the Board down the line if needed.</p>
+      </div>
+      {{ form.finances_needed.errors }}
+      {{ form.finances_needed }}
+      <span class="helptext">{{ form.finances_needed.help_text|safe }}</span>
+    </p>
+  </div>
   {% include 'snippets/field.html' with field=form.others_needed %}
 
   <h2>Anything Else</h2>

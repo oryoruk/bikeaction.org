@@ -13,6 +13,7 @@ export class AccountService {
   urlRoot: string = '';
   session_key: string | null = null;
   expiry_date: string | null = null;
+  isDonor: boolean = false;
 
   headers() {
     const headers = new Headers();
@@ -44,8 +45,10 @@ export class AccountService {
 
       const json = await response.json();
       this.username = json.username;
+      this.isDonor = json.donor || false;
       this.loggedIn = true;
       await this.storage.set('loggedIn', this.username);
+      await this.storage.set('isDonor', this.isDonor);
     } catch (error: any) {
       if (error.message) {
         await this.presentError(error.message);
@@ -69,8 +72,10 @@ export class AccountService {
       this.username = json.username;
       this.session_key = json.session_key;
       this.expiry_date = json.expiry_date;
+      this.isDonor = json.donor || false;
       this.loggedIn = true;
       await this.storage.set('loggedIn', this.username);
+      await this.storage.set('isDonor', this.isDonor);
       await Preferences.set({
         key: 'session_key',
         value: this.session_key as string,
@@ -98,7 +103,9 @@ export class AccountService {
       const json = await response.json();
       this.username = null;
       this.loggedIn = false;
+      this.isDonor = false;
       await this.storage.set('loggedIn', null);
+      await this.storage.set('isDonor', null);
       this.session_key = null;
       await Preferences.remove({ key: 'session_key' });
     } catch (error: any) {
@@ -139,12 +146,15 @@ export class AccountService {
         this.username = null;
       }
     });
+    await this.storage.get('isDonor').then((isDonor) => {
+      this.isDonor = isDonor || false;
+    });
   }
 
   constructor(
     private storage: Storage,
     private toastController: ToastController,
-    private platform: Platform
+    private platform: Platform,
   ) {
     if (platform.is('hybrid')) {
       this.urlRoot = 'https://bikeaction.org';

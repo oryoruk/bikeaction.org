@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-header">
+  <h1>Elections</h1>
+</div>
+
+<div class="form-container">
+  {% if upcoming_election %}
+  <div class="upcoming-election">
+    <h2>Upcoming Election</h2>
+    <div class="election-card">
+      <h3>{{ upcoming_election.title }}</h3>
+      <p>{{ upcoming_election.description|truncatewords:30 }}</p>
+      <p><b>Membership Deadline:</b> {{ upcoming_election.membership_eligibility_deadline|date:"F j, Y" }}</p>
+      <a href="{% url 'election_detail' upcoming_election.slug %}" class="submit-button">View Details</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <h2>All Elections</h2>
+  {% if elections %}
+  <div class="elections-list">
+    {% for election in elections %}
+    <div class="election-item">
+      <h3>{{ election.title }}</h3>
+      <p>{{ election.description|truncatewords:20 }}</p>
+      <p><b>Voting:</b> {{ election.voting_opens|date:"M j" }} - {{ election.voting_closes|date:"M j, Y" }}</p>
+      <a href="{% url 'election_detail' election.slug %}">View Details →</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No elections at this time.</p>
+  {% endif %}
+</div>
+{% endblock %}

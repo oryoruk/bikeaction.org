@@ -16,6 +16,7 @@ import { OnlineStatusService } from '../services/online.service';
 import { PhotoService } from '../services/photo.service';
 import { UpdateService } from '../services/update.service';
 import { ViolationService } from '../services/violation.service';
+import { AccountService } from '../services/account.service';
 
 @Component({
   selector: 'app-home',
@@ -36,6 +37,8 @@ export class HomePage implements OnInit {
   violationPosition: Position | null = null;
   violationTime: Date | null = null;
 
+  submittedViolationsCount: number = 0;
+
   constructor(
     private loadingCtrl: LoadingController,
     private toastController: ToastController,
@@ -45,7 +48,8 @@ export class HomePage implements OnInit {
     private photos: PhotoService,
     private storage: Storage,
     private violations: ViolationService,
-    public platform: Platform
+    public platform: Platform,
+    public accountService: AccountService,
   ) {}
 
   async toggleOpenToCapture() {
@@ -69,7 +73,7 @@ export class HomePage implements OnInit {
             Geolocation.clearWatch({ id: this.geoWatchId });
           }
         }
-      }
+      },
     );
     //this.violationPosition = {
     //  timestamp: 123,
@@ -104,10 +108,10 @@ export class HomePage implements OnInit {
         blobToURL(thumbnail).then((thumbnailUrl) => {
           const savedThumbnail = this.photos.savePictureFromBase64(
             thumbnailUrl as string,
-            `thumb-${savedImage.filepath}`
+            `thumb-${savedImage.filepath}`,
           );
         });
-      }
+      },
     );
     this.violationImage = savedImage.webviewPath;
     this.violationTime = new Date();
@@ -161,7 +165,7 @@ export class HomePage implements OnInit {
                       .get('violation-' + dis.violationId)
                       .then((data: any) => {
                         data.position = JSON.parse(
-                          JSON.stringify(dis.violationPosition)
+                          JSON.stringify(dis.violationPosition),
                         );
                         dis.storage
                           .set('violation-' + dis.violationId, data)
@@ -242,6 +246,13 @@ export class HomePage implements OnInit {
     Device.getInfo().then((deviceInfo) => {
       this.deviceInfo = deviceInfo;
       this.checkPermission();
+    });
+
+    // Count submitted violations
+    this.violations.history().then((history) => {
+      this.submittedViolationsCount = history.filter(
+        (violation) => violation.submitted === true,
+      ).length;
     });
   }
 }

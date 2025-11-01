@@ -2,13 +2,20 @@
   <ion-toolbar>
     <ion-buttons slot="start">
       <ion-button
+        (click)="back()"
+        class="plausible-event-name=Back+From+Confirm+Details"
+        >Back</ion-button
+      >
+    </ion-buttons>
+    <ion-title>Confirm some details</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
         color="medium"
         (click)="cancel()"
         class="plausible-event-name=Cancel+Submission+From+Confirm+Details"
         >Cancel</ion-button
       >
     </ion-buttons>
-    <ion-title>Confirm some details</ion-title>
   </ion-toolbar>
 </ion-header>
 

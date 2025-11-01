@@ -1,6 +1,7 @@
 {% load bleach_tags %}
 # {{ application.data.shortname.value|bleach }}
 
+**Quick Summary**:
 ```
 {{ application.data.quick_summary.value|bleach }}
 ```
@@ -68,7 +69,7 @@
 
 **{{ application.data.recurring.label|bleach }}**:
 ```
-{% if application.data.recurring.value %}{{ application.data.recurring.value|bleach }}{% else %}no response{% endif %}
+{% if application.data.recurring.value %}Yes{% else %}No{% endif %}
 ```
 
 ## Resources

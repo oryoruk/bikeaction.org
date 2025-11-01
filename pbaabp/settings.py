@@ -124,6 +124,7 @@ INSTALLED_APPS = [
     "aliases",
     "lazer",
     "cms",
+    "elections",
 ]
 
 MIDDLEWARE = [
@@ -179,6 +180,11 @@ if CONN_MAX_AGE:
 CONN_HEALTH_CHECKS = env.bool("DJANGO_CONN_HEALTH_CHECKS", default=True)
 if CONN_HEALTH_CHECKS:
     DATABASES["default"]["CONN_HEALTH_CHECKS"] = CONN_HEALTH_CHECKS
+
+# Speed up tests by skipping migrations and creating schema directly from models
+DATABASES["default"]["TEST"] = {
+    "MIGRATE": False,
+}
 
 _REDIS_URL = env("REDIS_URL", default="redis://redis:6379/0")
 if _REDIS_URL.startswith("rediss://"):
@@ -393,6 +399,9 @@ STRIPE_LIVE_MODE = not DEBUG
 DJSTRIPE_USE_NATIVE_JSONFIELD = True
 DJSTRIPE_WEBHOOK_SECRET = env("DJSTRIPE_WEBHOOK_SECRET", default=None)
 DJSTRIPE_FOREIGN_KEY_TO_FIELD = "id"
+
+# Events
+EVENTS_HIDDEN_DISCORD_CHANNELS = env.list("EVENTS_HIDDEN_DISCORD_CHANNELS", default=[], cast=int)
 
 # Neighborhood Selection
 NEIGHBORHOOD_SELECTION_DISCORD_GUILD_ID = env(

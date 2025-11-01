@@ -31,6 +31,12 @@ def organizer_application_view(request, pk=None):
 
 
 @login_required
+def organizer_application_preview(request):
+    form = OrganizerApplicationForm(label_suffix="")
+    return render(request, "organizer_application.html", {"form": form, "preview": True})
+
+
+@login_required
 def organizer_application(request, pk=None):
     profile_complete = request.user.profile.complete
     apps_connected = request.user.profile.apps_connected

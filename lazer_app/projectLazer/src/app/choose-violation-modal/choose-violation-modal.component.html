@@ -2,13 +2,20 @@
   <ion-toolbar>
     <ion-buttons slot="start">
       <ion-button
+        (click)="back()"
+        class="plausible-event-name=Back+From+Violation"
+        >Back</ion-button
+      >
+    </ion-buttons>
+    <ion-title>What's the Violation?</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
         color="medium"
         (click)="cancel()"
         class="plausible-event-name=Cancel+Submission+From+Violation"
         >Cancel</ion-button
       >
     </ion-buttons>
-    <ion-title>What's the Violation?</ion-title>
   </ion-toolbar>
 </ion-header>
 

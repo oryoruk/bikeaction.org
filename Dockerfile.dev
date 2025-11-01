@@ -21,16 +21,18 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV PATH="${PATH}:/home/user/.local/bin"
+
+RUN pip install playwright
+RUN playwright install-deps chromium
+RUN playwright install chromium
+
 ARG USER_ID
 ARG GROUP_ID
 RUN groupadd -o -g $GROUP_ID -r usergrp
 RUN useradd -o -m -u $USER_ID -g $GROUP_ID user
 RUN mkdir /code
 RUN chown user /code
-ENV PATH="${PATH}:/home/user/.local/bin"
-
-RUN pip install playwright
-RUN playwright install-deps chromium
 
 USER user
 WORKDIR /code
@@ -41,7 +43,5 @@ RUN --mount=type=cache,target=/home/user/.cache/pip \
     pip install -r requirements/dev.txt
 RUN --mount=type=cache,target=/home/user/.cache/pip \
     pip install -r requirements/deploy.txt
-
-RUN playwright install chromium
 
 COPY . /code/

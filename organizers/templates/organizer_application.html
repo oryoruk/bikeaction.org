@@ -103,8 +103,8 @@
   {% include 'snippets/field.html' with invisible=True field=form.not_gonna_try_to_name_this_info %}
 
   <div class="button-holder">
-    <button id="saveDraft" class="secondary-button" type="submit" name="save-draft" value="Save Draft" formnovalidate="formnovalidate">Save Draft</button>
-    <button class="submit-button" type="submit" name="submit-application" value="Submit!" formnovalidate="formnovalidate">Submit</button>
+    <button id="saveDraft" class="secondary-button" {% if preview %}disabled{% endif %} type="submit" name="save-draft" value="Save Draft" formnovalidate="formnovalidate">Save Draft</button>
+    <button class="submit-button" {% if preview %}disabled{% endif %}  type="submit" name="submit-application" value="Submit!" formnovalidate="formnovalidate">Submit</button>
     <span class="helptext">Use "Save Draft" to store your responses without any validation and return later. Once submitted your response will not be editable.</span>
   </div>
 

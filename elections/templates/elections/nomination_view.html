@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-header">
+  <h1>Nomination</h1>
+  <h2>{{ election.title }}</h2>
+</div>
+
+<div class="form-container">
+  <h3>Nomination from {{ nomination.nominator.first_name }} {{ nomination.nominator.last_name|slice:":1" }}.</h3>
+  <p><strong>Nominee:</strong> {{ nomination.nominee.get_display_name }}</p>
+  <p><strong>Submitted:</strong> {{ nomination.created_at|date:"F j, Y g:i A" }}</p>
+  <p><strong>Acceptance Status:</strong> {{ nomination.get_acceptance_status_display }}</p>
+
+  {% if nomination.draft %}
+  <p style="color: #666;">
+    <b>Status:</b> Draft (not yet submitted)
+  </p>
+  {% endif %}
+
+  <hr>
+
+  <div class="nomination-content">
+    <div class="field-display">
+      <label>Nomination Statement:</label>
+      <div class="field-value">{{ nomination.nomination_statement|linebreaks }}</div>
+    </div>
+  </div>
+
+  <div class="button-holder">
+    <a href="{% url 'election_detail' election.slug %}" class="secondary-button">Back to Election</a>
+  </div>
+</div>
+{% endblock %}

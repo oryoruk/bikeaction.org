@@ -12,7 +12,10 @@ export class PhotoService {
   public photos: UserPhoto[] = [];
   private PHOTO_STORAGE: string = 'photos';
 
-  constructor(private platform: Platform, private storage: Storage) {}
+  constructor(
+    private platform: Platform,
+    private storage: Storage,
+  ) {}
 
   // Save picture to file on device
   public async savePicture(photo: Photo) {

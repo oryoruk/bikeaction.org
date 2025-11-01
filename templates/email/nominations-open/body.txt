@@ -1,0 +1,21 @@
+Hello {{ first_name }},
+
+<small><i>You are receiving this email because you are a member of Philly Bike Action.</i></small>
+
+**Board of Directors 2026 Election Nomination Information**
+
+Nominations are now open for Philly Bike Action’s Board of Directors for the 2026 term. To nominate yourself or another PBA member, use this [nomination form](https://bikeaction.org/elections/board-election-2025/nominate/). Nominations will close at the end of the day on **October 31**.
+
+**The text of your nomination statements will appear on the ballot.** If nominating someone besides yourself, they will be sent an email invitation to accept or decline your nomination.
+
+The Board of Directors is responsible for PBA’s financial stewardship, legal compliance, governance, and strategic planning. Board members serve in a fiduciary capacity and may be expected to publicly represent PBA. Board members are expected to be regularly active on our Discord server to successfully fulfill associated duties such as approving projects.
+
+One of the elected Board members must serve as Chair. The Chair is responsible for running Board meetings and signing official documents for PBA. If self-nominating, be sure to include your openness to fulfilling this role in your nomination statement. 
+
+Voting will take place **November 14–21.** Voters can approve of as many candidates as they want. Top vote-getters will fill 10–15 possible seats. See this chart for more info:
+
+<div style="width: 100%; text-align: center;">
+  <img style="width: 100%; max-width: 600px" src="templates/email/nominations-open/election-info.png">
+</div>
+
+**Philly Bike Action**

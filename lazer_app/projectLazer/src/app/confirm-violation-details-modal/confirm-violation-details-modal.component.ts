@@ -13,7 +13,7 @@ import { Browser } from '@capacitor/browser';
 import { Storage } from '@ionic/storage-angular';
 import { IonModal } from '@ionic/angular';
 
-import { parseAddress } from 'vladdress';
+import { AddressParser } from '@sroussey/parse-address';
 import { usaStates } from 'typed-usa-states/dist/states';
 import { fromURL, blobToURL } from 'image-resize-compress';
 
@@ -114,7 +114,7 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
     private storage: Storage,
     public onlineStatus: OnlineStatusService,
     private accountService: AccountService,
-    private platform: Platform
+    private platform: Platform,
   ) {}
 
   async presentReallySubmit() {
@@ -127,6 +127,10 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
           text: 'Cancel',
           role: 'cancel',
           handler: () => {
+            // Fire Plausible event for cancel
+            if (typeof (window as any).plausible !== 'undefined') {
+              (window as any).plausible('Confirm Submit - Cancel');
+            }
             this.cancel();
           },
         },
@@ -134,12 +138,20 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
           text: 'Submit it!',
           role: 'confirm',
           handler: () => {
+            // Fire Plausible event for submit
+            if (typeof (window as any).plausible !== 'undefined') {
+              (window as any).plausible('Confirm Submit - Submit');
+            }
             this.submit();
           },
         },
       ],
     });
     await alert.present();
+  }
+
+  back() {
+    return this.modalCtrl.dismiss(null, 'back');
   }
 
   cancel() {
@@ -162,7 +174,7 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
       street_name: string,
       zip_code: string,
       additional_information: string,
-      headers: any
+      headers: any,
     ): Promise<any> {
       return new Promise((resolve, reject) => {
         const formData = new FormData();
@@ -237,7 +249,7 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
           this.streetName,
           this.zipCode,
           additionalInfo,
-          this.accountService.headers()
+          this.accountService.headers(),
         )
           .then((data: any) => {
             this.violation.submitted = true;
@@ -319,8 +331,8 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
   getStates(): Map<string, string> {
     return new Map(
       usaStates.map(
-        (obj) => [obj.abbreviation as string, obj.name as string] as const
-      )
+        (obj) => [obj.abbreviation as string, obj.name as string] as const,
+      ),
     );
   }
 
@@ -328,18 +340,20 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
     if (this.platform.is('hybrid')) {
       this.rootUrl = 'https://bikeaction.org';
     }
-    const parsedAddress = parseAddress(this.violation.address);
-    this.blockNumber = parsedAddress.streetNumber as string;
-    this.streetName = best_match(
-      'Street Name',
-      `${parsedAddress.streetName} ${parsedAddress.streetSuffix}`
-    );
-    this.zipCode = best_match('Zip Code', parsedAddress.zipCode as string);
+    const addressParser = new AddressParser();
+    const parsedAddress = addressParser.parseLocation(this.violation.address);
+    this.blockNumber = parsedAddress.number as string;
+    const inputStreetName =
+      `${parsedAddress.prefix || ''} ${parsedAddress.street || ''} ${parsedAddress.type || ''}`
+        .trim()
+        .replace(/\s+/g, ' ');
+    this.streetName = best_match('Street Name', inputStreetName);
+    this.zipCode = best_match('Zip Code', parsedAddress.postal_code as string);
 
     if (this.violation.vehicle!.vehicle?.props?.make_model[0].make) {
       this.make = best_match(
         'Make',
-        this.violation.vehicle.vehicle.props.make_model[0].make
+        this.violation.vehicle.vehicle.props.make_model[0].make,
       );
     }
     if (this.violation.vehicle!.vehicle?.props?.make_model[0].model) {
@@ -348,13 +362,13 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
     if (this.violation.vehicle!.vehicle?.props?.color[0].value) {
       this.vehicleColor = best_match(
         'Vehicle Color',
-        this.violation.vehicle.vehicle.props.color[0].value
+        this.violation.vehicle.vehicle.props.color[0].value,
       );
     }
     if (this.violation.vehicle!.vehicle?.type) {
       this.bodyStyle = best_match(
         'Body Style',
-        this.violation.vehicle.vehicle.type
+        this.violation.vehicle.vehicle.type,
       );
     }
     if (this.violation.vehicle!.plate) {

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-header">
+  <h1>Update Nominee Profile</h1>
+  <p>{{ election.title }}</p>
+</div>
+
+<div class="form-container">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {% if next_url %}
+    <input type="hidden" name="next" value="{{ next_url }}">
+    {% endif %}
+    {% if self_nomination_id %}
+    <input type="hidden" name="self_nomination_id" value="{{ self_nomination_id }}">
+    {% endif %}
+
+    {{ form.non_field_errors }}
+
+    {% for hidden_field in form.hidden_fields %}
+      {{ hidden_field.errors }}
+      {{ hidden_field }}
+    {% endfor %}
+
+    {% if nominee.photo %}
+    <p>
+      <strong>Current photo:</strong><br>
+      <img src="{{ nominee.photo.url }}" alt="Current photo" style="max-width: 300px; max-height: 300px; border-radius: 4px; border: 1px solid #ddd; margin-top: 10px;">
+    </p>
+    {% endif %}
+
+    {% for field in form.visible_fields %}
+    <p>
+      {{ field.label_tag }}
+      {{ field.errors }}
+      {{ field }}
+      <span class="helptext">{{ field.help_text }}</span>
+    </p>
+    {% endfor %}
+
+    <div class="button-holder">
+      <button class="submit-button" type="submit">Save Profile</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

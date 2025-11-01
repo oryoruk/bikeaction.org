@@ -1,9 +1,9 @@
 import re
 
-import redis
 from django.conf import settings
 from interactions import Extension, component_callback
-from redis_lock import RedisLock
+from redis.asyncio import Redis
+from redis_lock.asyncio import RedisLock
 from redis_lock.exceptions import AcquireFailedError
 
 from lazer.models import ViolationReport
@@ -13,7 +13,7 @@ from lazer.utils import build_embed
 
 class LaserVision(Extension):
     def __init__(self, bot):
-        self._redis = redis.Redis.from_url(settings._REDIS_URL)
+        self._redis = Redis.from_url(settings._REDIS_URL)
         self.bot = bot
 
     APPROVE_BUTTON_ID_REGEX = re.compile(r"laser_violation_approve_(.*)")
@@ -77,8 +77,10 @@ class LaserVision(Extension):
                 embed.description = f"**VIOLATION REPORT REJECTED by {ctx.member}**"
                 await ctx.edit_origin(embeds=[embed], components=[])
                 await ctx.send("Violation report rejected!", ephemeral=True)
+                return
         except AcquireFailedError:
             await ctx.send("Another user has already responded", ephemeral=True)
+            return
 
 
 def setup(bot):

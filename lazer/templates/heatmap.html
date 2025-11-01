@@ -1,145 +1,200 @@
-{% extends 'base.html' %}
-{% load static leaflet_tags %}
-{% block extra_head %}
-    {% leaflet_js %}
-    {% leaflet_css %}
-    <script src="{% static 'js/leaflet-heat.js' %}"></script>
-{% endblock %}
+{% extends 'base.html' %} {% load static leaflet_tags %} {% block extra_head %}
+{% leaflet_js %} {% leaflet_css %}
+<script src="{% static 'js/leaflet-heat.js' %}"></script>
+<script src="{% static 'js/philly.js' %}"></script>
+{% endblock %} {% block content %}
+<h1><a href="/tools/laser-vision/">Laser Vision</a> Violation Reports</h1>
+<script>
+  var paramsString = window.location.search;
+  var searchParams = new URLSearchParams(paramsString);
 
-{% block content %}
-    <h1>Laser Vision Violation Reports</h1>
-    <script>
+  function writeQueryString() {
+    if (history.pushState) {
+      var newurl =
+        window.location.protocol +
+        "//" +
+        window.location.host +
+        window.location.pathname +
+        (searchParams.toString() ? "?" : "") +
+        searchParams.toString();
+      window.history.pushState({ path: newurl }, "", newurl);
+    }
+  }
 
-      var paramsString = window.location.search;
-      var searchParams = new URLSearchParams(paramsString);
+  function updateHeader(count, uniqueUsers) {
+    if (searchParams.get("violation") === null) {
+      document.getElementById("violationName").innerHTML =
+        "<b>Violation</b>: All";
+    } else {
+      document.getElementById("violationName").innerHTML =
+        `<b>Violation</b>: ${searchParams.get("violation")}`;
+    }
 
-      function writeQueryString() {
-          if (history.pushState) {
-              var newurl = (
-                window.location.protocol + "//" +
-                window.location.host +
-                window.location.pathname +
-                (searchParams.toString() ? '?' : '') + searchParams.toString()
-              );
-              window.history.pushState({path:newurl},'',newurl);
-          }
+    if (searchParams.get("date") !== null) {
+      document.getElementById("violationDate").innerHTML =
+        `<b>Date(s)</b>: ${searchParams.get("date")}`;
+    } else if (
+      searchParams.get("date_gte") !== null ||
+      searchParams.get("date_lte") !== null
+    ) {
+      document.getElementById("violationDate").innerHTML =
+        `<b>Date(s)</b>: ${searchParams.get("date_gte") ? searchParams.get("date_gte") : ""} - ${searchParams.get("date_lte") ? searchParams.get("date_lte") : ""}`;
+    } else {
+      document.getElementById("violationDate").innerHTML =
+        `<b>Date(s)</b>: All`;
+    }
+
+    document.getElementById("violationCount").innerHTML =
+      `<b>Count</b>: ${count}`;
+
+    document.getElementById("uniqueUsers").innerHTML =
+      `<b>Reporters</b>: ${uniqueUsers}`;
+  }
+
+  function setDate(startOffset, endOffset = null) {
+    const nextElem = document.getElementById("nextDay");
+    const prevElem = document.getElementById("prevDay");
+    if (startOffset === null && endOffset === null) {
+      searchParams.delete("date");
+      searchParams.delete("date_lte");
+      searchParams.delete("date_gte");
+      nextElem.style.display = "none";
+      prevElem.style.display = "none";
+    }
+    let today = new Date();
+    if (startOffset !== null && endOffset === null) {
+      searchParams.delete("date_lte");
+      searchParams.delete("date_gte");
+      const querydate = new Date(today);
+      querydate.setDate(today.getDate() + startOffset);
+      searchParams.set("date", querydate.toISOString().substring(0, 10));
+      if (startOffset === 0) {
+        nextElem.style.display = "none";
+        prevElem.style.display = "";
+      } else {
+        nextElem.style.display = "";
+        prevElem.style.display = "";
       }
+      nextElem.onclick = function() {setDate(startOffset + 1)}
+      prevElem.onclick = function() {setDate(startOffset - 1)}
+    }
+    if (startOffset !== null && endOffset !== null) {
+      searchParams.delete("date");
+      const startquerydate = new Date(today);
+      startquerydate.setDate(today.getDate() + startOffset);
+      searchParams.set(
+        "date_gte",
+        startquerydate.toISOString().substring(0, 10),
+      );
+      const endquerydate = new Date(today);
+      endquerydate.setDate(today.getDate() + endOffset);
+      searchParams.set("date_lte", endquerydate.toISOString().substring(0, 10));
+      nextElem.style.display = "none";
+      prevElem.style.display = "none";
+    }
+    writeQueryString();
+    updateData();
+  }
 
-      function updateHeader(count) {
-        if (searchParams.get('violation') === null) {
-          document.getElementById("violationName").innerHTML = "<b>Violation</b>: All";
-        } else {
-          document.getElementById("violationName").innerHTML = `<b>Violation</b>: ${searchParams.get('violation')}`;
+  function setViolation(violation) {
+    if (violation === null) {
+      searchParams.delete("violation");
+    } else {
+      searchParams.set("violation", violation);
+    }
+    writeQueryString();
+    updateData();
+  }
+
+  function fetchData() {
+    return fetch(
+      "/tools/laser/map_data/" +
+        (searchParams.toString() ? "?" : "") +
+        searchParams.toString(),
+    )
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Response status: ${response.status}`);
         }
+        const data = response.json();
+        return data;
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
 
-        if (searchParams.get('date') !== null) {
-          document.getElementById("violationDate").innerHTML = `<b>Date(s)</b>: ${searchParams.get('date')}`;
-        } else if (searchParams.get('date_gte') !== null || searchParams.get('date_lte') !== null) {
-          document.getElementById("violationDate").innerHTML = `<b>Date(s)</b>: ${searchParams.get('date_gte') ? searchParams.get('date_gte') : ''} - ${searchParams.get('date_lte') ? searchParams.get('date_lte') : ''}`;
-        } else {
-          document.getElementById("violationDate").innerHTML = `<b>Date(s)</b>: All`;
-        }
+    updateQueryString();
+  }
 
-        document.getElementById("violationCount").innerHTML = `<b>Count</b>: ${count}`;
-      }
+  var heatmapLayer = L.heatLayer([]);
 
-      function setDate(startOffset, endOffset = null) {
-          if (startOffset === null && endOffset === null) {
-              searchParams.delete('date');
-              searchParams.delete('date_lte');
-              searchParams.delete('date_gte');
-          }
-          let today = new Date();
-          if (startOffset !== null && endOffset === null) {
-              searchParams.delete('date_lte');
-              searchParams.delete('date_gte');
-              const querydate = new Date(today);
-              querydate.setDate(today.getDate() + startOffset); 
-              searchParams.set('date', querydate.toISOString().substring(0, 10));
-          }
-          if (startOffset !== null && endOffset !== null) {
-              searchParams.delete('date');
-              const startquerydate = new Date(today);
-              startquerydate.setDate(today.getDate() + startOffset); 
-              searchParams.set('date_gte', startquerydate.toISOString().substring(0, 10));
-              const endquerydate = new Date(today);
-              endquerydate.setDate(today.getDate() + endOffset); 
-              searchParams.set('date_lte', endquerydate.toISOString().substring(0, 10));
-          }
-          writeQueryString();
-          updateData();
-      }
+  function updateData() {
+    fetchData().then((data) => {
+      heatmapLayer.setOptions({ radius: 10, blur: 5, minOpacity: 0.4 });
+      heatmapLayer.setLatLngs(data.pins);
+      heatmapLayer.redraw();
+      updateHeader(data.pins.length, data.unique_users_count);
+    });
+  }
+  function map_init(map, options) {
+    map.setView([39.9528, -75.1635], 12);
+    map.setMinZoom(12);
+    const bounds = L.latLngBounds([
+      [39.867004, -74.955763],
+      [40.137992, -75.280266],
+    ]);
+    L.polygon(phillyBoundary, { fillOpacity: 0, weight: 2 }).addTo(map);
+    map.setMaxBounds(bounds);
+    map.on("drag", function () {
+      map.panInsideBounds(bounds, { animate: false });
+    });
+    updateData();
+    heatmapLayer.addTo(map);
+  }
+</script>
 
-      function setViolation(violation) {
-          if (violation === null) {
-            searchParams.delete('violation');
-          } else {
-            searchParams.set('violation', violation);
-          }
-          writeQueryString();
-          updateData();
-      }
-
-      function fetchData() {
-        return fetch('/tools/laser/map_data/' + (searchParams.toString() ? '?' : '') + searchParams.toString())
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error(`Response status: ${response.status}`);
-            }
-            const data = response.json();
-            return data;
-          })
-          .catch(error => {
-            console.error('Error fetching data:', error);
-          });
-
-        updateQueryString();
-      }
-
-      var heatmapLayer = L.heatLayer([]);
-
-      function updateData() {
-        fetchData()
-          .then(data => {
-            heatmapLayer.setOptions({radius: 10, blur: 5, minOpacity: .4});
-            heatmapLayer.setLatLngs(data);
-            heatmapLayer.redraw();
-            updateHeader(data.length);
-            setTimeout(updateData, 10000)
-          });
-      }
-      function map_init (map, options) {
-        map.setView([39.9528, -75.1635], 12);
-        map.setMinZoom(12);
-        const bounds = L.latLngBounds([[39.8528, -75.2635], [40.0528, -75.0635]]);
-        map.setMaxBounds(bounds);
-        map.on('drag', function() {
-            map.panInsideBounds(bounds, { animate: false });
-        });
-        updateData();
-        heatmapLayer.addTo(map);
-      }
-    </script>
-
-    <div>
-      <div id="violationName"><b>Violation</b>: {% if request.GET.violation %}{{ request.GET.violation }}{% else %}All{% endif %}</div>
-      <div id="violationDate"><b>Date(s)</b>: {% if request.GET.date %}{{ request.GET.date }}{% elif request.GET.date_gte or request.GET.date_lte %}{% if request.GET.date_gte %}{{ request.GET.date_gte }}{% endif %} - {% if request.GET.date_lte %}{{ request.GET.date_lte }}{% endif %}{% else %}All{% endif %}</div>
-      <div id="violationCount"><b>Count</b>: ...</div>
-    </div>
-    <div style="text-align: center">
-      <button onclick="setDate(0)">Today</button>
-      <button onclick="setDate(-1)">Yesterday</button>
-      <button onclick="setDate(-6, 0)">Last 7 Days</button>
-      <button onclick="setDate(-27, 0)">Last 28 Days</button>
-      <button onclick="setDate(null)">All Time</button>
-    </div>
-    <div style="text-align: center; margin: .5em;">
-      <button onclick="setViolation('Bike Lane')">Bike Lane</button>
-      <button onclick="setViolation('Sidewalk')">Sidewalk</button>
-      <button onclick="setViolation('Crosswalk')">Crosswalk</button>
-      <button onclick="setViolation('Corner Clearance')">Corner Clearance</button>
-      <button onclick="setViolation('Handicap Ramp')">Handicap Ramp</button>
-      <button onclick="setViolation(null)">All</button>
-    </div>
-    {% leaflet_map "lazer_reports" callback="window.map_init" %}
-{% endblock %}
+<div>
+  <div id="violationName">
+    <b>Violation</b>: {% if request.GET.violation %}{{ request.GET.violation }}{% else %}All{% endif %}
+  </div>
+  <div id="violationDate">
+    <b>Date(s)</b>: {% if request.GET.date %}{{ request.GET.date }}{% elif request.GET.date_gte or request.GET.date_lte %}{% if request.GET.date_gte %}{{ request.GET.date_gte }}{% endif %} - {% if request.GET.date_lte %}{{ request.GET.date_lte }}{% endif %}{% else %}All{% endif %}
+  </div>
+  <div id="violationCount"><b>Count</b>: ...</div>
+  <div id="uniqueUsers"><b>Reporters</b>: ...</div>
+</div>
+<div style="text-align: center">
+  <button onclick="setDate(null)">All Time</button> |
+  <button onclick="setDate(0)">Today</button>
+  <button onclick="setDate(-1)">Yesterday</button>
+  <button id="prevDay" style="display: none;">Prev</button>
+  <button id="nextDay" style="display: none;">Next</button>
+  <button onclick="setDate(-6, 1)">Last 7 Days</button>
+  <button onclick="setDate(-27, 1)">Last 28 Days</button>
+</div>
+<div style="text-align: center; margin: 0.5em">
+  <button onclick="setViolation(null)">All</button> |
+  <button onclick="setViolation('Bike Lane')">Bike Lane</button>
+  <button onclick="setViolation('Sidewalk')">Sidewalk</button>
+  <button onclick="setViolation('Crosswalk')">Crosswalk</button>
+  <button onclick="setViolation('Corner Clearance')">Corner Clearance</button>
+  <button onclick="setViolation('Handicap Ramp')">Handicap Ramp</button>
+</div>
+<div style="text-align: center; margin: 0.5em">
+  <button onclick="updateData()">Refresh Data</button>
+</div>
+<div>
+  <p
+    style="
+      text-align: center;
+      font-size: smaller;
+      font-style: italic;
+      color: grey;
+    "
+  >
+    As a measure of privacy, new submissions are added up to 30 minutes after
+    creation and geolocation data for each report has been randomized within a
+    block of the precise location.
+  </p>
+</div>
+{% leaflet_map "lazer_reports" callback="window.map_init" %} {% endblock %}

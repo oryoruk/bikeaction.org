@@ -54,6 +54,10 @@ export class ChooseViolationModalComponent {
     this.modalCtrl.dismiss(this.selection, 'save');
   }
 
+  back() {
+    return this.modalCtrl.dismiss(null, 'back');
+  }
+
   cancel() {
     return this.modalCtrl.dismiss({ note: null }, 'cancel');
   }

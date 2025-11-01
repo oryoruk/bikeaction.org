@@ -1,0 +1,28 @@
+Hello {{ first_name }},
+
+<small><i>You are receiving this email from <a href="https://bikeaction.org/">Philly Bike Action</a> because you signed our "<a href="https://bikeaction.org/campaigns/build-the-city-hall-bike-lane/">Build the City Hall Bike Lane</a>" petition.</i></small>
+
+**PUBLIC OPEN HOUSE for the City Hall bike lane on Wednesday Oct 22**
+
+<div style="width: 100%; text-align: center;">
+  <img style="width: 100%; max-width: 600px" src="templates/email/city-hall-bike-lane-open-house/banner.png">
+</div>
+
+On Wednesday, OTIS is hosting a **public open house for the City Hall bike lane project.** This is an opportunity to learn more about the project, see the proposed design, meet the project team, and **fill out an exit survey**.
+
+This project is going in as a *pilot* because Councilmember Young has [withheld his support](https://billypenn.com/2025/10/01/councilman-jeffery-young-hold-bike-lane/). **We need folks to leave positive feedback on the public exit survey** to prove that the public supports the project. On the exit survey, rate the project 5 stars and put any critiques in the written comments.
+
+<div style="text-align: center">
+When:  <b>Wednesday, Oct. 22</b><br>
+What time:  <b>6-7:30 p.m.</b><br>
+Where:   <b>Municipal Services Building</b> (Innovation Lab)<br>
+1401 JFK Blvd. 19102 (please check in with security upon your arrival)
+</div>
+
+<hr>
+
+<div style="width: 100%; text-align: center;">
+  <img style="width: 100%; max-width: 600px" src="templates/email/city-hall-bike-lane-open-house/flyer.png">
+</div>
+
+**Philly Bike Action**

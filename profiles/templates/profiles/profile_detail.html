@@ -55,7 +55,293 @@
   {% url 'account_set_password' as set_password_url %}
   <p><b>{% blocktranslate %}Set a password for your account <a href="{{ set_password_url }}">here</a>.{% endblocktranslate %}</b></p>
   {% endif %}
+  <br><small style="color: darkred;">
+    <a href="{% url 'profile_delete' %}" style="color: darkred;">{% translate "Delete your profile and account" %}</a>
+  </small>
 </div>
+
+<hr>
+<div class="form-header">
+  <h2>Membership</h2>
+  <div class="table-container">
+    <table>
+        <tr>
+          <th>Donor</th>
+          <td>
+            {% if request.user.profile.donor %}
+            <i class="fa-solid fa-check icon-green"></i>
+            {% else %}
+            <i class="fa-solid fa-xmark icon-{% if request.user.profile.membership %}grey{% else %}pink{% endif %}"></i>
+            {% endif %}
+          </td>
+          <td>
+            {% if request.user.profile.donor %}
+            Manage your recurring donation <a href="#donations">here</a>
+            {% else %}
+            You can become a recurring donor <a href="#donations">here</a>
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <th>Discord Activity</th>
+          <td>
+            {% if request.user.profile.discord_active %}
+            <i class="fa-solid fa-check icon-green"></i>
+            {% else %}
+            <i class="fa-solid fa-xmark icon-{% if request.user.profile.membership %}grey{% else %}pink{% endif %}"></i>
+            {% endif %}
+          </td>
+          <td>
+            {% if request.user.profile.discord_active %}
+            Activity in last 30 days: {{ request.user.profile.discord_messages_last_30 }} messages
+            {% elif request.user.profile.discord %}
+            No activity in last 30 days
+            {% else %}
+            Not Apps Connected!
+            {% endif %}
+          </td>
+        </tr>
+        {% for membership in request.user.memberships.all %}
+        {% if membership.start_date <= today %}
+        {% if not membership.end_date or membership.end_date >= today %}
+        <tr>
+          <th>Other</th>
+          <td>
+            {% if request.user.profile.membership %}
+            <i class="fa-solid fa-check icon-green"></i>
+            {% else %}
+            <i class="fa-solid fa-xmark icon-pink"></i>
+            {% endif %}
+          </td>
+          <td>
+            {{ membership.reason }}
+            {% if membership.end_date %}
+            <br><small>(Expires {{ membership.end_date|date:"M d, Y" }})</small>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+        {% endif %}
+        {% endfor %}
+        <tr>
+          <th>Status</th>
+          <td>{% if request.user.profile.membership %}<i class="fa-solid fa-check icon-green"></i>{% else %}<i class="fa-solid fa-xmark icon-pink">{% endif %}</td>
+          <td>
+            {% if request.user.profile.membership %}
+            You are a member in good standing! 🎉
+            {% else %}
+            You are not an active member.
+            {% endif %}
+          </td>
+        </tr>
+    </table>
+  </div>
+
+  {% if upcoming_election and current_eligibility.eligible and not election_eligibility.eligible %}
+  <div style="padding: 1rem; background-color: #f5f5f5; border-left: 4px solid #9ca3af; margin: 1rem 0;">
+    <p style="margin: 0 0 0.5rem 0;"><strong><i class="fa-solid fa-exclamation-triangle"></i> Upcoming Election: {{ upcoming_election.title }}</strong></p>
+    <p style="margin: 0.5rem 0;">The membership eligibility deadline is <strong>{{ upcoming_election.membership_eligibility_deadline|date:"F d, Y g:i A" }}</strong>. You're currently a member, but you <em>may</em> not meet the eligibility requirements by that date.</p>
+
+    <p style="margin: 0.75rem 0 0.25rem 0; font-weight: bold;">What you need to be aware of:</p>
+    <ul style="margin: 0; text-align: left;">
+      {% if not election_eligibility.donor and not election_eligibility.discord_active %}
+        {% if current_eligibility.donor %}
+          {# User is currently a donor but won't be by deadline #}
+          <li>
+            Your recurring donation {% if election_eligibility.donor_status == "active_renewal_required" %}renews on {{ election_eligibility.donor_next_renewal|date:"M d, Y" }} before the deadline - make sure your payment method is up to date{% else %}may expire before the deadline if payment does not succeed{% endif %}
+          </li>
+          <li>
+            {% if not request.user.profile.discord %}
+              <a href="{% provider_login_url "discord" process="connect" %}">Connect your Discord account</a> and participate between {{ discord_activity_start_date|date:"M d" }} and {{ upcoming_election.membership_eligibility_deadline|date:"M d" }}
+            {% else %}
+              Participate on Discord between {{ discord_activity_start_date|date:"M d" }} and {{ upcoming_election.membership_eligibility_deadline|date:"M d" }}
+            {% endif %}
+          </li>
+        {% else %}
+          {# User is not currently a donor #}
+          <li>
+            Become a <a href="#donations">recurring donor</a>
+          </li>
+          <li>
+            {% if request.user.profile.discord %}
+              Participate on Discord between {{ discord_activity_start_date|date:"M d" }} and {{ upcoming_election.membership_eligibility_deadline|date:"M d" }}
+            {% else %}
+              <a href="{% provider_login_url "discord" process="connect" %}">Connect your Discord account</a> and participate between now and the deadline
+            {% endif %}
+          </li>
+        {% endif %}
+      {% elif not election_eligibility.donor %}
+        <li>Your Discord activity will be too old by the deadline</li>
+        <li>Participate on Discord after {{ discord_activity_start_date|date:"M d" }}</li>
+        {% if current_eligibility.donor %}
+          <li>Ensure your recurring donation renews successfully{% if election_eligibility.donor_next_renewal %} on {{ election_eligibility.donor_next_renewal|date:"M d, Y" }}{% endif %}</li>
+        {% else %}
+          <li>Become a <a href="#donations">recurring donor</a></li>
+        {% endif %}
+      {% elif not election_eligibility.discord_active %}
+        <li>Your recurring donation {% if election_eligibility.donor_status == "active_renewal_required" %}renews on {{ election_eligibility.donor_next_renewal|date:"M d, Y" }} before the deadline - make sure your payment method is up to date{% else %}may expire before the deadline if payment does not succeed{% endif %}</li>
+        {% if election_eligibility.donor_status != "active_renewal_required" %}
+          <li>Renew your <a href="#donations">recurring donation</a></li>
+        {% endif %}
+        <li>{% if request.user.profile.discord %}Participate on Discord after {{ discord_activity_start_date|date:"M d" }}{% else %}<a href="{% provider_login_url "discord" process="connect" %}">Connect your Discord account</a> and be active{% endif %}</li>
+      {% endif %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% for election in open_nomination_elections %}
+    <div style="padding: 1.5rem; background-color: #e8f4f8; border-left: 4px solid #007bff; margin: 1rem 0;">
+      <h3 style="margin: 0 0 0.5rem 0;"><i class="fa-solid fa-vote-yea"></i> Nominations Open: {{ election.title }}</h3>
+      <p style="margin: 0.5rem 0;">Nominations are currently open! You were a member in good standing as of the eligibility deadline ({{ election.membership_eligibility_deadline|date:"F d, Y" }}), so you can nominate qualified members for this election. Including yourself!</p>
+      <p style="margin: 0.5rem 0;"><strong>Nominations close:</strong> {{ election.nominations_close|date:"F d, Y g:i A" }}</p>
+      <p style="margin: 1rem 0 0 0;">
+        <a href="{% url 'nomination_form' election.slug %}" class="submit-button">Submit a Nomination</a>
+      </p>
+    </div>
+  {% endfor %}
+</div>
+
+{% if nominations_received_pending %}
+<hr>
+<div class="form-header">
+  <h2>Pending Nominations</h2>
+  <p><strong>You have been nominated! Please review and respond:</strong></p>
+
+  <div class="table-container">
+    <table>
+        <tr>
+          <th>Election</th>
+          <th>Nominated By</th>
+          <th>Discord</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+        {% for nomination in nominations_received_pending %}
+        <tr>
+          <td>{{ nomination.nominee.election.title }}</td>
+          <td>{{ nomination.nominator.first_name }} {{ nomination.nominator.last_name|slice:":1" }}.</td>
+          <td>{% if nomination.nominator.socialaccount_set.all %}@{{ nomination.nominator.socialaccount_set.first.extra_data.username }}{% endif %}</td>
+          <td>{{ nomination.created_at|date:"M d, Y" }}</td>
+          <td>
+            {% if not nomination.nominee.election.is_nominations_closed %}
+            <a href="{% url 'nomination_respond' nomination.nominee.election.slug nomination.id %}" class="homepage-button">Respond</a>
+            {% else %}
+            <span style="color: #999;">Nominations Closed</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if nomination_drafts %}
+<hr>
+<div class="form-header">
+  <h2>Nomination Drafts</h2>
+  <div class="table-container">
+    <table>
+        <tr>
+          <th>Election</th>
+          <th>Nominee</th>
+          <th>Discord</th>
+          <th>Last Updated</th>
+          <th>Actions</th>
+        </tr>
+        {% for nomination in nomination_drafts %}
+        <tr>
+          <td>{{ nomination.nominee.election.title }}</td>
+          <td>{{ nomination.nominee.get_display_name }}</td>
+          <td>{% if nomination.nominee.user.socialaccount_set.all %}@{{ nomination.nominee.user.socialaccount_set.first.extra_data.username }}{% endif %}</td>
+          <td>{{ nomination.updated_at|date:"M d, Y" }}</td>
+          <td><a href="{% url 'nomination_edit' nomination.nominee.election.slug nomination.id %}">Edit/Submit</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if nominations_given %}
+<hr>
+<div class="form-header">
+  <h2>Your Nominations</h2>
+  <div class="table-container">
+    <table>
+        <tr>
+          <th>Election</th>
+          <th>Nominee</th>
+          <th>Discord</th>
+          <th>Status</th>
+          <th>Submitted</th>
+          <th>Actions</th>
+        </tr>
+        {% for nomination in nominations_given %}
+        <tr>
+          <td>{{ nomination.nominee.election.title }}</td>
+          <td>{{ nomination.nominee.get_display_name }}</td>
+          <td>{% if nomination.nominee.user.socialaccount_set.all %}@{{ nomination.nominee.user.socialaccount_set.first.extra_data.username }}{% endif %}</td>
+          <td>{{ nomination.get_acceptance_status_display }}</td>
+          <td>{{ nomination.created_at|date:"M d, Y" }}</td>
+          <td>
+            <a href="{% url 'nomination_view' nomination.nominee.election.slug nomination.id %}">View</a>
+            {% if nomination.nominator == nomination.nominee.user and not nomination.nominee.election.is_nominations_closed and nomination.acceptance_status != 'declined' %}
+            | <a href="{% url 'nomination_edit' nomination.nominee.election.slug nomination.id %}">Edit</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if nominations_received_responded %}
+<hr>
+<div class="form-header">
+  <h2>Nominations Received</h2>
+
+  {% for nominee in responded_nominees %}
+  {% if not nominee.election.is_nominations_closed %}
+  <p style="margin: 10px 0;">
+    <a href="{% url 'nominee_profile_edit' nominee.election.slug nominee.id %}" class="homepage-button" style="font-size: 1.5em;">Manage Nominee Profile</a>
+  </p>
+  {% endif %}
+  {% endfor %}
+
+  <div class="table-container">
+    <table>
+        <tr>
+          <th>Election</th>
+          <th>Nominated By</th>
+          <th>Discord</th>
+          <th>Your Response</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+        {% for nomination in nominations_received_responded %}
+        <tr>
+          <td>{{ nomination.nominee.election.title }}</td>
+          <td>{{ nomination.nominator.first_name }} {{ nomination.nominator.last_name|slice:":1" }}.</td>
+          <td>{% if nomination.nominator.socialaccount_set.all %}@{{ nomination.nominator.socialaccount_set.first.extra_data.username }}{% endif %}</td>
+          <td><strong>{{ nomination.get_acceptance_status_display }}</strong></td>
+          <td>{{ nomination.acceptance_date|date:"M d, Y" }}</td>
+          <td>
+            {% if not nomination.nominee.election.is_nominations_closed %}
+              {% if nomination.nominator == nomination.nominee.user %}
+              <a href="{% url 'nomination_respond' nomination.nominee.election.slug nomination.id %}">Withdraw Nomination</a>
+              {% else %}
+              <a href="{% url 'nomination_respond' nomination.nominee.election.slug nomination.id %}">Change Response</a>
+              {% endif %}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+    </table>
+  </div>
+</div>
+{% endif %}
 
 {% if request.user.profile.project_application_drafts %}
 <hr>
@@ -129,7 +415,7 @@
 {% if request.user.profile.organizer_application %}
 <hr>
 <div class="form-header">
-  <h2>Project Applications</h2>
+  <h2>Organizer Application</h2>
   <div class="table-container">
     <table>
         <tr>
@@ -192,7 +478,7 @@
 {% endif %}
 <hr>
 <div class="form-header">
-  <h2>{% translate "Donations" %}</h2>
+  <h2 id="donations">{% translate "Donations" %}</h2>
   <a style="font-size: 1.5em;" class="homepage-button" href="{% url 'create_one_time_donation_checkout_session' %}">{% translate "Make a one-time donation" %}</a>
   <p><small>
     {% translate "Philly Bike Action is a social welfare organization incorporated in the Commonwealth of Pennsylvania." %}
@@ -210,23 +496,24 @@
 </div>
 <hr>
 <div class="form-header">
-  <h2>T-Shirts</h2>
-  <i>T-Shirt pre-orders are closed! You can buy a shirt from the February 2025 order at the <a href="https://apps.bikeaction.org/events/philly-bike-expo-2025-x-pba/">Philly Bike Expo</a> or PBA April Citywide, though we can't guarantee availability.</i>
+  <h2>T-Shirts & Sweatshirts</h2>
+  <i>Shirt pre-orders are closed! Check back later for future pre-order opportunities.</i>
   <!--
   {% if request.user.profile.complete %}
-  <p><a class="submit-button" href="{% url 'shirt_order' %}">Pre-Order a shirt</a></p>
+  <p><a class="submit-button" href="{% url 'shirt_order' %}">Pre-Order a shirt or sweatshirt</a></p>
   {% else %}
-  <span>Please <a href="{% url 'profile_update' %}">complete your profile</a> to pre-order a shirt.</span>
+  <span>Please <a href="{% url 'profile_update' %}">complete your profile</a> to pre-order.</span>
   {% endif %}
   -->
 {% if request.user.tshirt_orders.all %}
-  <p>Your T-Shirt pre-orders</p>
+  <p>Your Shirt Orders</p>
   <div class="table-container">
     <table>
-      <tr><th>Fit</th><th>Size</th><th>Print Color</th><th>Action</th></tr>
+      <tr><th>Product</th><th>Fit</th><th>Size</th><th>Print Color</th><th>Action</th></tr>
       {% for tshirt_order in request.user.tshirt_orders.all %}
       <tr>
-        <td>{% if tshirt_order.fit == 2 %}Unisex{% elif tshirt_order.fit == 3 %}Crop{% else %}?{% endif %}</td>
+        <td>{{ tshirt_order.get_product_type_display }}</td>
+        <td>{% if tshirt_order.fit == 2 %}Unisex{% elif tshirt_order.fit == 3 %}Crop{% elif tshirt_order.fit == 4 %}Sweatshirt{% else %}?{% endif %}</td>
         <td>{{ tshirt_order.get_size_display }}</td>
         <td>{{ tshirt_order.get_print_color_display }}</td>
         <td>

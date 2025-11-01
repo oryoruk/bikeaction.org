@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-header">
+  <h1>{{ election.title }}</h1>
+</div>
+
+<div class="form-container">
+  <div class="election-info">
+    {% if election.description %}
+    <div class="description">
+      {{ election.description|linebreaks }}
+    </div>
+    {% endif %}
+
+    <h2>Important Dates</h2>
+    <table>
+      <tr>
+        <th>Membership Eligibility Deadline:</th>
+        <td>{{ election.membership_eligibility_deadline|date:"F j, Y g:i A" }}</td>
+      </tr>
+      <tr>
+        <th>Nominations Open:</th>
+        <td>{{ election.nominations_open|date:"F j, Y g:i A" }}</td>
+      </tr>
+      <tr>
+        <th>Nominations Close:</th>
+        <td>{{ election.nominations_close|date:"F j, Y g:i A" }}</td>
+      </tr>
+      <tr>
+        <th>Voting Opens:</th>
+        <td>{{ election.voting_opens|date:"F j, Y g:i A" }}</td>
+      </tr>
+      <tr>
+        <th>Voting Closes:</th>
+        <td>{{ election.voting_closes|date:"F j, Y g:i A" }}</td>
+      </tr>
+    </table>
+
+    {% if can_nominate %}
+    <div class="action-buttons">
+      <a href="{% url 'nomination_form' election.slug %}" class="submit-button">Submit a Nomination</a>
+    </div>
+    {% endif %}
+
+    {% if user.is_staff %}
+    <div class="admin-actions">
+      <h3>Admin Actions</h3>
+      <a href="{% url 'nomination_list' election.slug %}" class="secondary-button">View All Nominations</a>
+    </div>
+    {% endif %}
+
+    {% if user_nominations %}
+    <h2>Your Nominations</h2>
+    <ul>
+      {% for nomination in user_nominations %}
+      <li>
+        {{ nomination.nominee.get_display_name }}
+        {% if nomination.draft %}(Draft){% endif %}
+        - <a href="{% url 'nomination_view' election.slug nomination.id %}">View</a>
+        {% if nomination.draft %}
+        | <a href="{% url 'nomination_edit' election.slug nomination.id %}">Edit</a>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    <div class="button-holder">
+      <a href="{% url 'election_list' %}" class="secondary-button">Back to Elections</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

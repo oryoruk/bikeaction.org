@@ -6,6 +6,7 @@ import secrets
 from functools import wraps
 from importlib import import_module
 
+import pytz
 from asgiref.sync import sync_to_async
 from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
@@ -15,6 +16,8 @@ from django.core.paginator import Paginator
 from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
+from django.views.decorators.cache import cache_page
 from django.views.decorators.csrf import csrf_exempt
 
 from campaigns.admin import randomize_lat_long
@@ -201,6 +204,7 @@ async def report_api(request):
             return JsonResponse({"submitted": False}, status=400)
 
 
+@cache_page(30)
 def map_data(request):
     violation_filter = request.GET.get("violation", None)
     date_gte = request.GET.get("date_gte", None)
@@ -210,28 +214,41 @@ def map_data(request):
     pins = []
     queryset = ViolationReport.objects.filter(submitted__isnull=False).select_related("submission")
     if violation_filter:
-        queryset = queryset.filter(violation_observed__startswith=violation_filter)
+        queryset = queryset.filter(violation_observed__startswith=violation_filter).filter(
+            submission__captured_at__lt=timezone.now() - datetime.timedelta(minutes=15)
+        )
+
     if date:
         queryset = queryset.filter(
             submission__captured_at__date=datetime.datetime.strptime(date, "%Y-%m-%d")
+            .astimezone(pytz.timezone("America/New_York"))
+            .date()
         )
     else:
         if date_gte:
             queryset = queryset.filter(
                 submission__captured_at__gte=datetime.datetime.strptime(date_gte, "%Y-%m-%d")
+                .astimezone(pytz.timezone("America/New_York"))
+                .date()
             )
         if date_lte:
             queryset = queryset.filter(
                 submission__captured_at__lte=datetime.datetime.strptime(date_lte, "%Y-%m-%d")
+                .astimezone(pytz.timezone("America/New_York"))
+                .date()
             )
 
-    for report in queryset.only("submission__location").all():
+    # Count unique users who submitted violations
+    unique_users = set()
+    for report in queryset.only("submission__location", "submission__created_by").all():
+        if report.submission.created_by_id:
+            unique_users.add(report.submission.created_by_id)
         lat, lng = randomize_lat_long(
             report.id, *(report.submission.location.y, report.submission.location.x)
         )
         pins.append([lat, lng, 1])
 
-    return JsonResponse(pins, safe=False)
+    return JsonResponse({"pins": pins, "unique_users_count": len(unique_users)}, safe=False)
 
 
 def map(request):
@@ -286,6 +303,7 @@ def login_api(request):
                 "first_name": request.user.first_name,
                 "session_key": session_key,
                 "expiry_date": expiry_date,
+                "donor": request.user.profile.donor(),
             },
             status=200,
         )
@@ -299,6 +317,7 @@ def check_login(request):
             "success": "ok",
             "username": request.user.email,
             "first_name": request.user.first_name,
+            "donor": request.user.profile.donor(),
         },
         status=200,
     )

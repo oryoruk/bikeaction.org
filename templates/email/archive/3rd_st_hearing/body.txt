@@ -1,0 +1,49 @@
+Hello {{first_name}},
+
+{% if petition %}
+*You are receiving this email from [Philly Bike Action](https://bikeaction.org/) because you signed our [Save the 3rd Street Bike Lane!](https://bikeaction.org/campaigns/save-the-3rd-street-bike-lane/) petition.*
+{% else %}
+*You are receiving this email from [Philly Bike Action](https://bikeaction.org/) because you have a Philly Bike Action account and live in City Council District 1.*
+{% endif %}
+
+---
+
+**Short version**: Please join **Friday July 18 8AM–10AM** in-person OR **virtually**—your short comment can help keep the 3rd street bike lane on track\! Details below\!
+
+---
+
+A “[Curbside Regulation Public Hearing](https://www.phila.gov/2025-07-14-public-hearing-notice-7-18/)” is being held this Friday, July 18 at 8AM regarding new **loading zones** on 3rd Street. This regulation change is part of installing a new [bike lane on 3rd Street](https://www.phila.gov/documents/3rd-street-south-st-to-market-st-bike-lane-project-materials/) between South and Market Streets. 
+
+We know that there will be strong attendance from the opposition group “FOPS.” Your **attendance** and **comment** will help prevent this small group from derailing the new bike lane on 3rd Street.
+
+No registration is necessary to comment in person. If you wish to comment virtually over zoom, you must register [here](https://gcc02.safelinks.protection.outlook.com/?url=https%3A%2F%2Fzoom.us%2Fmeeting%2Fregister%2Fpogjc6KcQJmQIm89WearkA&data=05%7C02%7CChristopher.Young%40phila.gov%7Cf3b759b3b84d4717f44008ddc09ef7c9%7C2046864f68ea497daf34a6629a6cd700%7C0%7C0%7C638878511166145987%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=jU1UEhYaA94oXpTT5ooeK0yIakM%2FumphETLwxUUcgv0%3D&reserved=0). All comments will be limited to 2 minutes. Be succinct\!
+
+**Example points for commenting:**  
+ 
+
+* **There is currently no space to legally load or unload along 3rd Street.** Loading zones are a neighborhood improvement that are needed for residents, ride shares, and deliveries to load and unload without getting a ticket.  
+* **The addition of the bike lane has no impact on the ability of residents to legally load or unload** **a vehicle. The bike lane only impacts *illegal* loading and unloading.**   
+* The City’s [traffic analysis](https://www.phila.gov/media/20250320121757/3rd-St-traffic-memo_2025-03.pdf) shows that two travel lanes are excessive for 3rd Street. The excess space causes dangerous speeding, putting people walking and cycling at risk. Reallocating a lane to a bike lane will create a safer street for all users.  
+* The 3rd Street bike lane was requested by residents after a community meeting on March 25, 2024 hosted by the Queen Village Neighbors Association about improving safety on 3rd Street.  
+* The City hosted a town hall about the project on March 4, 2025\. 280 residents attended and were able to give feedback on the plan, including on loading zones.  
+* 1000 Philadelphians signed the [petition](https://bikeaction.org/campaigns/save-the-3rd-street-bike-lane/) in favor of adding a bike lane on 3rd Street.
+
+ **Attend online through Zoom**
+
+* When: July 18, 2025 8:00 AM–10:00 AM  
+* **Please register** through [this Zoom link](https://gcc02.safelinks.protection.outlook.com/?url=https%3A%2F%2Fzoom.us%2Fmeeting%2Fregister%2Fpogjc6KcQJmQIm89WearkA&data=05%7C02%7CChristopher.Young%40phila.gov%7Cf3b759b3b84d4717f44008ddc09ef7c9%7C2046864f68ea497daf34a6629a6cd700%7C0%7C0%7C638878511166145987%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&sdata=jU1UEhYaA94oXpTT5ooeK0yIakM%2FumphETLwxUUcgv0%3D&reserved=0) in advance of this meeting.  
+* After registering, you will receive a confirmation email containing information about joining the meeting
+
+**Attend in person**
+
+* When: July 18, 2025 8:00 AM–10:00 AM  
+* Where: Room 18-22 One Parkway Building, 1515 Arch Street, Philadelphia PA 19102
+
+The 3rd Street bike lane will replace the western travel lane of 3rd Street with a bike lane from South Street to Market Street. The west lane of 3rd Street is currently marked with “No Stopping” regulations. As part of installing the bike lane, the City will add loading zones on the east side of the street to accommodate drivers who currently stop illegally on the west side to load. The addition of the bike lane will have no impact on the ability of drivers to **legally** load or unload.
+
+Thank you!  
+**Philly Bike Action**
+
+{% if petition %}
+**Want more from Philly Bike Action?** Join our [newsletter](https://bikeaction.org) or create a [PBA Account](https://apps.bikeaction.org/accounts/signup/) so we can let you know when important input opportunities like this one happen in your neighborhood.
+{% endif %}

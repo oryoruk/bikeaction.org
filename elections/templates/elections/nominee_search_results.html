@@ -1,0 +1,20 @@
+{% if users %}
+<ul class="nominee-search-results">
+  {% for user in users %}
+  <li class="nominee-result" data-user-id="{{ user.id }}" data-user-name="{{ user.display_name }}">
+    <strong>{{ user.display_name }}</strong>
+    {% if user.discord_handle %}
+    <span class="discord-handle">@{{ user.discord_handle }}</span>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="no-results">
+  {% if query %}
+  No eligible members found. Only members in good standing can be nominated.
+  {% else %}
+  Start typing a name or Discord handle to search...
+  {% endif %}
+</div>
+{% endif %}

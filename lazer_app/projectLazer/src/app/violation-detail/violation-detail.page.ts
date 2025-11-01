@@ -40,7 +40,7 @@ export class ViolationDetailPage implements OnInit {
     public onlineStatus: OnlineStatusService,
     public updateService: UpdateService,
     public accountService: AccountService,
-    private platform: Platform
+    private platform: Platform,
   ) {}
 
   async selectVehicle(index: number) {
@@ -142,7 +142,7 @@ export class ViolationDetailPage implements OnInit {
       long: number,
       dt: Date,
       img: string,
-      headers: any
+      headers: any,
     ): Promise<any> {
       return new Promise((resolve, reject) => {
         fromURL(img, 0.3, 'auto', 'auto', 'jpeg').then((resizedBlob) => {
@@ -188,13 +188,13 @@ export class ViolationDetailPage implements OnInit {
             this.violationData.position!.coords!.longitude,
             violationTime,
             photo.webviewPath,
-            this.accountService.headers()
+            this.accountService.headers(),
           )
             .then((data: any) => {
               this.violationData.raw = data;
               this.storage.set(
                 'violation-' + this.violationId,
-                this.violationData
+                this.violationData,
               );
               if (data.vehicles.length == 1) {
                 this.selectVehicle(0);
@@ -227,22 +227,30 @@ export class ViolationDetailPage implements OnInit {
     const chooseViolationModal = await this.modalCtrl.create({
       component: ChooseViolationModalComponent,
     });
-    chooseViolationModal.present();
+    await chooseViolationModal.present();
 
     const { data, role } = await chooseViolationModal.onWillDismiss();
 
     if (role === 'save') {
       this.violationData.violationType = data;
-      this.storage
-        .set('violation-' + this.violationId, this.violationData)
-        .then((data) => {
-          this.changeDetectorRef.detectChanges();
-        });
+      await this.storage.set(
+        'violation-' + this.violationId,
+        this.violationData,
+      );
+      this.changeDetectorRef.detectChanges();
+      // Add a small delay to ensure the modal is fully dismissed
+      setTimeout(() => {
+        this.openViolationModal();
+      }, 100);
+    } else if (role === 'back') {
+      // Go back to address selection
+      // Add a small delay to ensure the modal is fully dismissed
+      setTimeout(() => {
+        this.openAddressModal();
+      }, 100);
     } else {
       return;
     }
-
-    this.openViolationModal();
   }
 
   async openAddressModal() {
@@ -251,23 +259,28 @@ export class ViolationDetailPage implements OnInit {
         component: ChooseAddressModalComponent,
         componentProps: { violation: this.violationData },
       });
-      chooseAddressModal.present();
+      await chooseAddressModal.present();
 
       const { data, role } = await chooseAddressModal.onWillDismiss();
 
       if (role === 'save') {
         this.violationData.address = data;
-        this.storage
-          .set('violation-' + this.violationId, this.violationData)
-          .then((data) => {
-            this.changeDetectorRef.detectChanges();
-          });
+        await this.storage.set(
+          'violation-' + this.violationId,
+          this.violationData,
+        );
+        this.changeDetectorRef.detectChanges();
+        // Continue to next modal
+        setTimeout(() => {
+          this.openModal();
+        }, 100);
       } else {
         return;
       }
+    } else {
+      // If no address candidates, go directly to violation selection
+      this.openModal();
     }
-
-    this.openModal();
   }
 
   async openViolationModal() {
@@ -275,10 +288,17 @@ export class ViolationDetailPage implements OnInit {
       component: ConfirmViolationDetailsModalComponent,
       componentProps: { violation: this.violationData },
     });
-    confirmViolationDetailsModal.present();
+    await confirmViolationDetailsModal.present();
     const { data, role } = await confirmViolationDetailsModal.onWillDismiss();
 
     if (role === 'save') {
+      // Handle save action
+    } else if (role === 'back') {
+      // Go back to violation selection
+      // Add a small delay to ensure the modal is fully dismissed
+      setTimeout(() => {
+        this.openModal();
+      }, 100);
     } else {
       return;
     }
