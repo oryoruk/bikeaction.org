@@ -1,0 +1,39 @@
+Hello {{ first_name }},
+
+{% if petition %}
+<i><small>
+You are receiving this email from <a href="https://bikeaction.org/">Philly Bike Action</a> because you
+signed our "<a href="https://bikeaction.org/campaigns/build-the-city-hall-bike-lane/">Build the City Hall Bike Lane!</a>" petition
+</small></i>
+{% else %}
+<i><small>
+You are receiving this email from <a href="https://bikeaction.org/">Philly Bike Action</a> because you
+have a PBA Account and live in the southern portion of City Council District 5.
+</small></i>
+{% endif %}
+
+Councilmember Jeffery Young is hosting a:
+
+<div style="text-align: center">
+
+<a href="https://www.instagram.com/p/DQXX2l3kY5R/?igsh=OHFjajRjOGoyN2Rk">Center City Quality of Life Town Hall</a><br> 
+THIS Wednesday, November 5th, 6:00 PM to 7:30 PM<br>
+Parkway Central Library, 1901 Vine Street
+
+</div>
+
+CM Young has said he is holding off on several important roadway safety bills because he wants to *hear from the community*. **This is our chance to be heard\!**
+
+Please attend and voice support for: 
+
+* **Loading Zones for ALL of Center City**, which enables bike lane protection (CM Young has [carved out his district](https://www.inquirer.com/politics/philadelphia/philadelphia-city-council-restaurant-scalper-crackdown-bike-lanes-schools-20251016.html) from the most recent Center City Loading Zones enabling bill)
+
+* **The City Hall Bike Lane bill**, which would enable a separated bike lane around City Hall to be made street legal and permanent. (CM Young has [held up this bill in committee](https://www.inquirer.com/news/bike-lane-philadelphia-city-hall-jeffery-young-20251005.html) \-- despite over 1,400 petition signers in support and confirmation from OTIS and PennDOT of its safety)
+
+* **16th Street Bike Lane bill**, which would enable a tiny, but important, bike lane between Market and JFK. (Despite community support and a presentation by OTIS this Fall, CM Young has **NOT** introduced this bill)
+
+<div style="text-align: center; width: 100%;">
+<img style="max-width: 600px; width: 80%" src="templates/email/demand-safety-cc/img.jpg">
+</div>
+
+**Philly Bike Action**
