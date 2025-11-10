@@ -230,10 +230,18 @@ def election_detail(request, election_slug):
 
     # Get user's nominations if logged in
     user_nominations = []
+    can_vote = False
+    voting_closed = timezone.now() >= election.voting_closes
+
     if request.user.is_authenticated:
         user_nominations = Nomination.objects.filter(
             nominee__election=election, nominator=request.user
         ).select_related("nominee")
+
+        # Check if user is eligible to vote
+        if election.is_voting_open() and hasattr(request.user, "profile"):
+            eligible_voters = election.get_eligible_voters()
+            can_vote = request.user.profile in eligible_voters
 
     return render(
         request,
@@ -242,6 +250,8 @@ def election_detail(request, election_slug):
             "election": election,
             "user_nominations": user_nominations,
             "can_nominate": request.user.is_authenticated and election.is_nominations_open(),
+            "can_vote": can_vote,
+            "voting_closed": voting_closed,
         },
     )
 
@@ -727,8 +737,10 @@ def election_results(request, election_slug):
             "election": election,
             "district_seats": results["district_seats"],
             "at_large_seats": results["at_large_seats"],
+            "all_candidates": results["all_candidates"],
             "question_results": results["question_results"],
             "total_ballots": results["total_ballots"],
+            "eligible_voters_count": results["eligible_voters_count"],
         },
     )
 
@@ -746,8 +758,12 @@ def calculate_election_results(election):
     """
     from collections import Counter, defaultdict
 
-    # Get all ballots
-    ballots = Ballot.objects.filter(election=election).select_related("voter__profile")
+    # Get all ballots with optimized queries
+    ballots = (
+        Ballot.objects.filter(election=election)
+        .select_related("voter__profile")
+        .prefetch_related("candidate_votes__nominee__user__profile")
+    )
     total_ballots = ballots.count()
 
     # Count votes for each nominee
@@ -768,7 +784,7 @@ def calculate_election_results(election):
             if match:
                 voter_district_num = int(match.group())
 
-        # Count votes for each nominee
+        # Count votes for each nominee (using prefetched data)
         for vote in ballot.candidate_votes.all():
             nominee = vote.nominee
             nominee_votes[nominee] += 1
@@ -811,13 +827,25 @@ def calculate_election_results(election):
                 nominee_district = nominee.user.profile.district
                 if nominee_district and str(district_num) in nominee_district.name:
                     district_vote_count = nominee_district_votes[nominee][district_num]
+                    # Must meet threshold of votes FROM district
                     if district_vote_count >= election.district_seat_min_votes:
-                        candidates_for_district.append((nominee, district_vote_count))
+                        # But winner determined by TOTAL votes (from all voters)
+                        total_votes = nominee_votes[nominee]
+                        candidates_for_district.append((nominee, total_votes, district_vote_count))
 
-            # Select winner (most votes from district)
+            # Select winner (most TOTAL votes, among those who met district threshold)
             if candidates_for_district:
-                winner, votes = max(candidates_for_district, key=lambda x: x[1])
-                district_seats.append((district_num, winner, votes))
+                winner, total_votes, district_votes = max(
+                    candidates_for_district, key=lambda x: x[1]
+                )
+                district_seats.append(
+                    {
+                        "district_num": district_num,
+                        "winner": winner,
+                        "total_votes": total_votes,
+                        "district_votes": district_votes,
+                    }
+                )
                 district_winners.add(winner)
 
     # Calculate at-large seats (from remaining candidates)
@@ -828,6 +856,54 @@ def calculate_election_results(election):
     ]
     remaining_candidates.sort(key=lambda x: x[1], reverse=True)
     at_large_seats = remaining_candidates[: election.at_large_seats_count]
+    at_large_winners = {nominee for nominee, _ in at_large_seats}
+
+    # Compile all candidates with results
+    all_candidates = []
+    for nominee, total_votes in nominee_votes.items():
+        nominee_district = nominee.user.profile.district
+        district_num = None
+        if nominee_district:
+            import re
+
+            match = re.search(r"\d+", nominee_district.name)
+            if match:
+                district_num = int(match.group())
+
+        # Determine seat type (if won)
+        seat_type = None
+        if nominee in district_winners:
+            seat_type = "district"
+        elif nominee in at_large_winners:
+            seat_type = "at_large"
+
+        all_candidates.append(
+            {
+                "nominee": nominee,
+                "total_votes": total_votes,
+                "district_num": district_num,
+                "district_votes": (
+                    nominee_district_votes[nominee].get(district_num, 0) if district_num else 0
+                ),
+                "seat_type": seat_type,
+            }
+        )
+
+    # Sort: district seats (by district number),
+    # at-large seats (alphabetically),
+    # then losers (alphabetically)
+    def sort_key(candidate):
+        if candidate["seat_type"] == "district":
+            # District winners first, sorted by district number
+            return (0, candidate["district_num"] or 999, "")
+        elif candidate["seat_type"] == "at_large":
+            # At-large winners second, sorted alphabetically
+            return (1, 0, candidate["nominee"].get_display_name().lower())
+        else:
+            # Non-winners last, sorted alphabetically
+            return (2, 0, candidate["nominee"].get_display_name().lower())
+
+    all_candidates.sort(key=sort_key)
 
     # Calculate question results
     question_results = []
@@ -836,9 +912,14 @@ def calculate_election_results(election):
         no_count = QuestionVote.objects.filter(question=question, answer=False).count()
         question_results.append((question, yes_count, no_count))
 
+    # Get eligible voters count
+    eligible_voters_count = election.get_eligible_voters().count()
+
     return {
         "district_seats": district_seats,
         "at_large_seats": at_large_seats,
+        "all_candidates": all_candidates,
         "question_results": question_results,
         "total_ballots": total_ballots,
+        "eligible_voters_count": eligible_voters_count,
     }

@@ -366,6 +366,9 @@ class Ballot(models.Model):
     class Meta:
         unique_together = ("election", "voter")
         ordering = ["-submitted_at"]
+        indexes = [
+            models.Index(fields=["election", "-submitted_at"]),
+        ]
 
     def __str__(self):
         voter_name = self.voter.get_full_name() or self.voter.email
@@ -392,6 +395,10 @@ class Vote(models.Model):
 
     class Meta:
         unique_together = ("ballot", "nominee")
+        indexes = [
+            models.Index(fields=["ballot"]),
+            models.Index(fields=["nominee"]),
+        ]
 
     def __str__(self):
         return f"Vote for {self.nominee.get_display_name()} on ballot {self.ballot.id}"

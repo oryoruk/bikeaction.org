@@ -8,74 +8,82 @@
     <p>
       <b>Voting closed:</b> {{ election.voting_closes|date:"F j, Y g:i A" }}
     </p>
-    <p>
-      <b>Total ballots cast:</b> {{ total_ballots }}
-    </p>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+      <div style="text-align: center;">
+        <div style="font-size: 2em; font-weight: bold; color: #007bff;">{{ eligible_voters_count }}</div>
+        <div style="color: #666; margin-top: 0.25rem;">Eligible Voters</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 2em; font-weight: bold; color: #28a745;">{{ total_ballots }}</div>
+        <div style="color: #666; margin-top: 0.25rem;">Ballots Cast</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 2em; font-weight: bold; color: #17a2b8;">{% widthratio total_ballots eligible_voters_count 100 %}%</div>
+        <div style="color: #666; margin-top: 0.25rem;">Turnout Rate</div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="form-container">
-  <h2>District-Reserved Seats</h2>
-  <p style="margin-bottom: 1.5rem;">
-    One seat per district (1-10), allocated to candidates from that district who received at least
-    {{ election.district_seat_min_votes }} votes from district members.
-  </p>
-
-  {% if district_seats %}
-  <div style="display: grid; gap: 1rem; margin-bottom: 2rem;">
-    {% for district_num, nominee, votes in district_seats %}
-    <div style="padding: 1rem; border: 2px solid #28a745; border-radius: 4px; background-color: #f8fff9;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div style="font-weight: bold; font-size: 1.1rem;">
-            District {{ district_num }}: {{ nominee.get_display_name }}
-          </div>
-          <div style="color: #666; margin-top: 0.25rem;">
-            {{ votes }} vote{{ votes|pluralize }} from District {{ district_num }} members
-          </div>
-        </div>
-        <div style="background-color: #28a745; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">
-          WINNER
-        </div>
-      </div>
-    </div>
-    {% endfor %}
+  <div style="margin-bottom: 1.5rem;">
+    <h2 style="margin: 0;">Board Election Results</h2>
+    <p style="margin: 0.5rem 0 0 0; color: #666;">
+      District seat winners (by district number), then at-large winners (alphabetically).
+    </p>
   </div>
-  {% else %}
-  <p style="color: #666; margin-bottom: 2rem;">No district seats were allocated.</p>
-  {% endif %}
 
-  <h2>At-Large Seats</h2>
-  <p style="margin-bottom: 1.5rem;">
-    {{ election.at_large_seats_count }} seats allocated to top vote-getters (excluding district seat winners).
-  </p>
-
-  {% if at_large_seats %}
-  <div style="display: grid; gap: 1rem; margin-bottom: 2rem;">
-    {% for nominee, votes in at_large_seats %}
-    <div style="padding: 1rem; border: 2px solid #007bff; border-radius: 4px; background-color: #f0f8ff;">
+  <div style="display: grid; gap: 0.75rem;">
+    {% for candidate in all_candidates %}
+    <div class="candidate-row{% if not candidate.seat_type %} non-winner{% endif %}" style="padding: 0.75rem 1rem; border: 1px solid {% if candidate.seat_type %}#28a745{% else %}#ddd{% endif %}; border-radius: 4px; {% if candidate.seat_type %}background-color: #f8fff9;{% endif %}{% if not candidate.seat_type %} display: none;{% endif %}">
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <div style="font-weight: bold; font-size: 1.1rem;">
-            {{ nominee.get_display_name }}
-            {% if nominee.user.profile.district %}
-            <span style="color: #666; font-weight: normal;">({{ nominee.user.profile.district.name }})</span>
+        <div style="flex: 1;">
+          <span style="font-weight: {% if candidate.seat_type %}bold{% else %}normal{% endif %};">
+            {{ candidate.nominee.get_display_name }}
+            {% if candidate.district_num %}
+            <span style="color: #666; font-weight: normal;">(District {{ candidate.district_num }})</span>
+            {% endif %}
+          </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="text-align: right;">
+            <div style="font-weight: bold;">{{ candidate.total_votes }} vote{{ candidate.total_votes|pluralize }}</div>
+            {% if candidate.district_num and candidate.district_votes > 0 %}
+            <div style="color: #666; font-size: 0.9em;">{{ candidate.district_votes }} from District {{ candidate.district_num }}</div>
             {% endif %}
           </div>
-          <div style="color: #666; margin-top: 0.25rem;">
-            {{ votes }} total vote{{ votes|pluralize }}
+          {% if candidate.seat_type == 'district' %}
+          <div style="background-color: #28a745; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: bold; font-size: 0.85em;">
+            DISTRICT
           </div>
-        </div>
-        <div style="background-color: #007bff; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold;">
-          WINNER
+          {% elif candidate.seat_type == 'at_large' %}
+          <div style="background-color: #007bff; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: bold; font-size: 0.85em;">
+            AT-LARGE
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
     {% endfor %}
   </div>
-  {% else %}
-  <p style="color: #666; margin-bottom: 2rem;">No at-large seats were allocated.</p>
-  {% endif %}
+
+  <div style="margin-top: 1rem; margin-bottom: 2rem; text-align: center;">
+    <span id="toggleAllNominees" style="color: #666; text-decoration: underline; cursor: pointer;">Show all nominees</span>
+  </div>
+
+  <script>
+    document.getElementById('toggleAllNominees').addEventListener('click', function() {
+      const nonWinners = document.querySelectorAll('.non-winner');
+      const link = this;
+      const isHidden = nonWinners[0].style.display === 'none';
+
+      nonWinners.forEach(function(element) {
+        element.style.display = isHidden ? 'block' : 'none';
+      });
+
+      link.textContent = isHidden ? 'Show elected only' : 'Show all nominees';
+    });
+  </script>
 
   {% if question_results %}
   <h2>Question Results</h2>
@@ -109,9 +117,5 @@
     {% endfor %}
   </div>
   {% endif %}
-
-  <div style="margin-top: 2rem;">
-    <a href="{% url 'profile' %}" class="submit-button">Return to Profile</a>
-  </div>
 </div>
 {% endblock %}
