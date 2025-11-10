@@ -123,12 +123,14 @@ class ExportVoterListCommandTestCase(TestCase):
             },
         )
 
+        now = timezone.now()
         return Subscription.objects.create(
             id=f"sub_{uuid.uuid4().hex[:10]}",
             customer=customer,
             status=status,
-            current_period_start=timezone.now() - datetime.timedelta(days=30),
-            current_period_end=timezone.now() + datetime.timedelta(days=days_until_end),
+            created=now - datetime.timedelta(days=60),  # Created 60 days ago
+            current_period_start=now - datetime.timedelta(days=30),
+            current_period_end=now + datetime.timedelta(days=days_until_end),
             livemode=False,
         )
 
@@ -674,71 +676,6 @@ class ExportVoterListCommandTestCase(TestCase):
 
             # Should have error message
             self.assertIn("Invalid", err.getvalue())
-        finally:
-            if os.path.exists(output_file):
-                os.remove(output_file)
-
-    def test_date_range_export(self):
-        """Test exporting with a date range"""
-        now = timezone.now().date()
-
-        # Create membership that spans part of the range
-        start_range = now - datetime.timedelta(days=60)
-        end_range = now - datetime.timedelta(days=30)
-
-        # User1: membership from 50 days ago to 40 days ago (overlaps with range)
-        Membership.objects.create(
-            user=self.user1,
-            kind=Membership.Kind.FISCAL,
-            start_date=now - datetime.timedelta(days=50),
-            end_date=now - datetime.timedelta(days=40),
-        )
-
-        # User2: membership from 20 days ago to now (does NOT overlap with range)
-        Membership.objects.create(
-            user=self.user2,
-            kind=Membership.Kind.FISCAL,
-            start_date=now - datetime.timedelta(days=20),
-            end_date=None,
-        )
-
-        # Export with range
-        output_file = "test_export_range.csv"
-        try:
-            call_command(
-                "export_voter_list",
-                start_range.isoformat(),
-                end_range.isoformat(),
-                output=output_file,
-            )
-
-            # Verify only user1 is exported (overlaps with range)
-            rows = self._read_csv(output_file)
-            emails = [row["email"] for row in rows]
-            self.assertIn("member1@example.com", emails)
-            self.assertNotIn("member2@example.com", emails)
-        finally:
-            if os.path.exists(output_file):
-                os.remove(output_file)
-
-    def test_date_range_end_before_start(self):
-        """Test that error is raised when end_date is before start_date"""
-        now = timezone.now().date()
-        output_file = "test_export_bad_range.csv"
-        try:
-            out = StringIO()
-            err = StringIO()
-            call_command(
-                "export_voter_list",
-                now.isoformat(),
-                (now - datetime.timedelta(days=10)).isoformat(),
-                output=output_file,
-                stdout=out,
-                stderr=err,
-            )
-
-            # Should have error message
-            self.assertIn("after start date", err.getvalue())
         finally:
             if os.path.exists(output_file):
                 os.remove(output_file)

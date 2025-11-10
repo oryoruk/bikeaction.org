@@ -47,6 +47,72 @@ class Election(models.Model):
             .first()
         )
 
+    def get_eligible_voters(self):
+        """
+        Get a QuerySet of profiles for users who were eligible voters as of the
+        membership eligibility deadline.
+
+        A user is eligible if they meet any of the membership criteria:
+        - Active Membership record
+        - Discord activity within 30 days (before deadline)
+        - Active Stripe subscription
+        """
+        from datetime import timedelta
+
+        from django.db.models import Q
+
+        from profiles.models import Profile
+
+        # Use the deadline as a single point in time (already a timezone-aware datetime)
+        deadline = self.membership_eligibility_deadline
+
+        # Calculate Discord activity window (30 days before deadline)
+        discord_start = deadline - timedelta(days=30)
+
+        # Build query for users who were members as of the deadline
+        # 1. Explicit Membership record active on deadline
+        membership_record_query = Q(memberships__start_date__lte=deadline) & (
+            Q(memberships__end_date__isnull=True) | Q(memberships__end_date__gte=deadline)
+        )
+
+        # 2. Discord activity within 30 days before deadline
+        # User must have BOTH a linked Discord account AND recent activity
+        discord_activity_query = Q(socialaccount__provider="discord") & Q(
+            profile__discord_activity__date__gte=discord_start,
+            profile__discord_activity__date__lte=deadline,
+        )
+
+        # 3. Stripe subscription active as of deadline
+        # We need to check BOTH:
+        # a) Historical invoices (for past billing periods that have ended)
+        # b) Current subscription periods (for ongoing subscriptions without invoices yet)
+        # This is because invoices are only created after a billing period ends
+        deadline_start = deadline.replace(hour=0, minute=0, second=0, microsecond=0)
+        deadline_end = deadline.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        stripe_invoice_query = Q(
+            djstripe_customers__subscriptions__invoices__period_start__lte=deadline_end,
+            djstripe_customers__subscriptions__invoices__period_end__gte=deadline_start,
+            djstripe_customers__subscriptions__invoices__status="paid",
+        )
+        stripe_current_period_query = Q(
+            djstripe_customers__subscriptions__current_period_start__lte=deadline_end,
+            djstripe_customers__subscriptions__current_period_end__gte=deadline_start,
+        )
+        stripe_subscription_query = stripe_invoice_query | stripe_current_period_query
+
+        # Combine all three criteria with OR
+        eligible_users_query = (
+            membership_record_query | discord_activity_query | stripe_subscription_query
+        )
+
+        # Get profiles for eligible users
+        return (
+            Profile.objects.filter(user__in=User.objects.filter(eligible_users_query))
+            .select_related("user")
+            .distinct()
+        )
+
     def is_nominations_open(self):
         """Check if nominations are currently open."""
         now = timezone.now()

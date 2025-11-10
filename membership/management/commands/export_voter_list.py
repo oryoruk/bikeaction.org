@@ -24,21 +24,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "start_date",
+            "as_of_date",
             type=str,
-            help=(
-                "Start date for membership range (YYYY-MM-DD format). "
-                "If end_date is not provided, checks membership as of this date."
-            ),
-        )
-        parser.add_argument(
-            "end_date",
-            type=str,
-            nargs="?",
-            help=(
-                "End date for membership range (YYYY-MM-DD format). "
-                "If provided, exports members who were active at any point during the range."
-            ),
+            help="Date to check membership status (YYYY-MM-DD format)",
         )
         parser.add_argument(
             "--output",
@@ -58,56 +46,45 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Parse the dates
-        start_date_str = options["start_date"]
-        end_date_str = options.get("end_date")
+        # Parse the date
+        as_of_date_str = options["as_of_date"]
 
         try:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            # Parse as date first
+            date_obj = datetime.strptime(as_of_date_str, "%Y-%m-%d").date()
+            # Create datetime bounds for the target date in UTC
+            # This is needed because Stripe invoice timestamps are in UTC
+            import pytz
+
+            # Start of day in UTC
+            day_start_utc = datetime.combine(date_obj, datetime.min.time()).replace(
+                tzinfo=pytz.UTC
+            )
+            # End of day in UTC
+            day_end_utc = datetime.combine(date_obj, datetime.max.time()).replace(tzinfo=pytz.UTC)
         except ValueError:
             self.stderr.write(
-                self.style.ERROR(f"Invalid start date format: {start_date_str}. Use YYYY-MM-DD")
+                self.style.ERROR(f"Invalid date format: {as_of_date_str}. Use YYYY-MM-DD")
             )
             return
-
-        # If end_date is provided, we're doing a range query
-        if end_date_str:
-            try:
-                end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-            except ValueError:
-                self.stderr.write(
-                    self.style.ERROR(f"Invalid end date format: {end_date_str}. Use YYYY-MM-DD")
-                )
-                return
-
-            if end_date < start_date:
-                self.stderr.write(self.style.ERROR("End date must be after start date"))
-                return
-        else:
-            # Single date mode - treat as both start and end
-            end_date = start_date
 
         output_file = options["output"]
         kind_filter = options["kind"]
 
-        # Calculate the date range for Discord activity
-        # For a range query, we check if they had activity between (start_date - 30) and end_date
-        # For a single date, we check if they had activity between (date - 30) and date
-        discord_activity_start = start_date - timedelta(days=30)
-        discord_activity_end = end_date
+        # Calculate Discord activity window (30 days before target date)
+        discord_activity_start = day_start_utc - timedelta(days=30)
 
-        # Build query to find all users who are members during the date range
+        # Build query to find all users who are members as of the given date
         # A user is a member if they meet ANY of these criteria:
-        # 1. Have an explicit Membership record that overlaps with [start_date, end_date]
-        # 2. Have Discord activity during the range (considering 30-day lookback)
-        # 3. Have an active Stripe subscription (current status only)
+        # 1. Have an explicit Membership record active on the target date
+        # 2. Have Discord activity within 30 days before the target date
+        # 3. Have a Stripe subscription active on the target date
 
-        # Membership overlaps with date range if:
-        # - membership starts before or during the range (start_date <= end_date)
-        # - AND membership ends after or during the range
-        #   (end_date >= start_date OR end_date is null)
-        membership_record_query = Q(memberships__start_date__lte=end_date) & (
-            Q(memberships__end_date__isnull=True) | Q(memberships__end_date__gte=start_date)
+        # Membership active on target date:
+        # - membership starts before or on end of day
+        # - AND (membership has no end_date OR end_date >= start of day)
+        membership_record_query = Q(memberships__start_date__lte=day_end_utc) & (
+            Q(memberships__end_date__isnull=True) | Q(memberships__end_date__gte=day_start_utc)
         )
 
         # Apply kind filter to membership records if specified
@@ -116,15 +93,104 @@ class Command(BaseCommand):
         elif kind_filter == "participation":
             membership_record_query &= Q(memberships__kind=Membership.Kind.PARTICIPATION)
 
-        # Discord activity within the date range (with 30-day lookback from start_date)
+        # Discord activity within 30 days before target date
+        # User must have BOTH a linked Discord account AND recent activity
         discord_activity_query = Q(socialaccount__provider="discord") & Q(
             profile__discord_activity__date__gte=discord_activity_start,
-            profile__discord_activity__date__lte=discord_activity_end,
+            profile__discord_activity__date__lte=day_end_utc,
         )
 
-        # Note: For Stripe subscriptions, we're checking for currently active ones
-        # since historical subscription status is harder to determine
-        stripe_subscription_query = Q(djstripe_customers__subscriptions__status__in=["active"])
+        # Stripe subscription active on target date
+        # We need to check BOTH:
+        # 1. Historical invoices (for past billing periods)
+        # 2. Current subscription periods (for ongoing subscriptions)
+        # This is because invoices are only created after a billing period ends
+        stripe_invoice_query = Q(
+            djstripe_customers__subscriptions__invoices__period_start__lte=day_end_utc,
+            djstripe_customers__subscriptions__invoices__period_end__gte=day_start_utc,
+            djstripe_customers__subscriptions__invoices__status="paid",
+        )
+        stripe_current_period_query = Q(
+            djstripe_customers__subscriptions__current_period_start__lte=day_end_utc,
+            djstripe_customers__subscriptions__current_period_end__gte=day_start_utc,
+        )
+        stripe_subscription_query = stripe_invoice_query | stripe_current_period_query
+
+        # Debug: Count each criteria separately
+        membership_users = User.objects.filter(membership_record_query).distinct().count()
+        discord_users = User.objects.filter(discord_activity_query).distinct().count()
+        stripe_users = User.objects.filter(stripe_subscription_query).distinct().count()
+
+        # Debug Membership records
+        total_memberships = Membership.objects.count()
+        active_on_date = Membership.objects.filter(start_date__lte=day_end_utc).filter(
+            Q(end_date__isnull=True) | Q(end_date__gte=day_start_utc)
+        )
+        self.stdout.write(self.style.WARNING("\nMembership Debug Info:"))
+        self.stdout.write(f"  - Total Membership records in DB: {total_memberships}")
+        self.stdout.write(f"  - Active on {date_obj}: {active_on_date.count()}")
+        if active_on_date.exists():
+            self.stdout.write("  - Sample active memberships:")
+            for mem in active_on_date[:5]:
+                self.stdout.write(
+                    f"    * User {mem.user.email}: {mem.start_date} to "
+                    f"{mem.end_date or 'ongoing'} ({mem.kind})"
+                )
+
+        # Debug Discord activity
+        from profiles.models import DiscordActivity
+
+        total_discord_activities = DiscordActivity.objects.count()
+        activities_in_window = DiscordActivity.objects.filter(
+            date__gte=discord_activity_start,
+            date__lte=day_end_utc,
+        ).count()
+        unique_discord_users = (
+            DiscordActivity.objects.filter(
+                date__gte=discord_activity_start,
+                date__lte=day_end_utc,
+            )
+            .values("profile__user")
+            .distinct()
+            .count()
+        )
+
+        self.stdout.write(self.style.WARNING("\nDiscord Debug Info:"))
+        self.stdout.write(f"  - Total Discord activities in DB: {total_discord_activities}")
+        self.stdout.write(
+            f"  - Activities in window ({discord_activity_start.date()} to {date_obj}): "
+            f"{activities_in_window}"
+        )
+        self.stdout.write(f"  - Unique users with activity: {unique_discord_users}")
+
+        # Debug Stripe subscriptions
+        from djstripe.models import Invoice, Subscription
+
+        total_subs = Subscription.objects.count()
+        total_invoices = Invoice.objects.count()
+        invoices_covering_date = Invoice.objects.filter(
+            period_start__lte=day_end_utc,
+            period_end__gte=day_start_utc,
+            status="paid",
+        ).count()
+        unique_subs_with_invoices = (
+            Invoice.objects.filter(
+                period_start__lte=day_end_utc,
+                period_end__gte=day_start_utc,
+                status="paid",
+            )
+            .values("subscription_id")
+            .distinct()
+            .count()
+        )
+        self.stdout.write(self.style.WARNING("\nStripe Debug Info:"))
+        self.stdout.write(f"  - Total Subscriptions in DB: {total_subs}")
+        self.stdout.write(f"  - Total Invoices in DB: {total_invoices}")
+        self.stdout.write(f"  - Paid invoices covering {date_obj}: {invoices_covering_date}")
+        self.stdout.write(
+            f"  - Unique subscriptions with paid invoices on {date_obj}: "
+            f"{unique_subs_with_invoices}"
+        )
 
         # Combine all three criteria with OR
         members_query = (
@@ -134,12 +200,17 @@ class Command(BaseCommand):
         # Get all users matching the criteria
         members = User.objects.filter(members_query).select_related("profile").distinct()
 
-        self.stdout.write(f"Total users in database: {User.objects.count()}")
-        if start_date == end_date:
-            self.stdout.write(f"Members as of {start_date}: {members.count()}")
-        else:
+        self.stdout.write(f"\nTotal users in database: {User.objects.count()}")
+        self.stdout.write(f"Members as of {date_obj}: {members.count()}")
+        self.stdout.write(f"  - Via Membership records: {membership_users}")
+        self.stdout.write(f"  - Via Discord activity: {discord_users}")
+        self.stdout.write(f"  - Via Stripe subscriptions: {stripe_users}")
+
+        # Check for users without profiles
+        users_without_profiles = members.filter(profile__isnull=True).count()
+        if users_without_profiles > 0:
             self.stdout.write(
-                f"Members active between {start_date} and {end_date}: {members.count()}"
+                self.style.WARNING(f"  - {users_without_profiles} users excluded (no profile)")
             )
 
         # Prepare data for CSV export
@@ -226,14 +297,7 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"Successfully exported {len(voter_data)} members to {output_file}")
         )
-        if start_date == end_date:
-            self.stdout.write(
-                self.style.SUCCESS(f"Membership as of: {start_date.strftime('%Y-%m-%d')}")
-            )
-        else:
-            start_str = start_date.strftime("%Y-%m-%d")
-            end_str = end_date.strftime("%Y-%m-%d")
-            self.stdout.write(self.style.SUCCESS(f"Membership range: {start_str} to {end_str}"))
+        self.stdout.write(self.style.SUCCESS(f"Membership as of: {date_obj.strftime('%Y-%m-%d')}"))
 
         # Summary statistics
         with_district = sum(1 for row in voter_data if not row["unique_id"].startswith("d0-"))

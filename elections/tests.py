@@ -230,6 +230,74 @@ class NominationModelTests(TestCase):
         # Still no email for self-nomination
         mock_send_email.assert_not_called()
 
+    def test_get_eligible_voters_returns_members_as_of_deadline(self):
+        """get_eligible_voters() should return profiles who were members at the deadline."""
+        from membership.models import Membership
+        from profiles.models import Profile
+
+        # Create users with profiles
+        user_c = User.objects.create_user(
+            username="user_c",
+            email="c@test.com",
+            first_name="Carol",
+            last_name="Chen",
+        )
+        profile_c = Profile.objects.create(user=user_c)
+
+        user_d = User.objects.create_user(
+            username="user_d",
+            email="d@test.com",
+            first_name="David",
+            last_name="Davis",
+        )
+        profile_d = Profile.objects.create(user=user_d)
+
+        # Create profiles for existing test users
+        profile_a = Profile.objects.create(user=self.user_a)
+        profile_b = Profile.objects.create(user=self.user_b)
+
+        # Election deadline is 30 days ago (from setUp)
+        deadline = self.election.membership_eligibility_deadline
+
+        # User A: Has membership that covers the deadline (eligible)
+        Membership.objects.create(
+            user=self.user_a,
+            kind=Membership.Kind.FISCAL,
+            start_date=(deadline - timedelta(days=60)).date(),
+            end_date=(deadline + timedelta(days=30)).date(),
+        )
+
+        # User B: Has membership that ended before deadline (not eligible)
+        Membership.objects.create(
+            user=self.user_b,
+            kind=Membership.Kind.FISCAL,
+            start_date=(deadline - timedelta(days=60)).date(),
+            end_date=(deadline - timedelta(days=10)).date(),
+        )
+
+        # User C: Has membership starting after deadline (not eligible)
+        Membership.objects.create(
+            user=user_c,
+            kind=Membership.Kind.FISCAL,
+            start_date=(deadline + timedelta(days=10)).date(),
+            end_date=(deadline + timedelta(days=100)).date(),
+        )
+
+        # User D: No membership (not eligible)
+
+        # Get eligible voters
+        eligible_voters = self.election.get_eligible_voters()
+
+        # Should return a QuerySet
+        self.assertTrue(hasattr(eligible_voters, "count"))
+
+        # Should include only user_a's profile
+        eligible_ids = [p.id for p in eligible_voters]
+        self.assertIn(profile_a.id, eligible_ids)
+        self.assertNotIn(profile_b.id, eligible_ids)
+        self.assertNotIn(profile_c.id, eligible_ids)
+        self.assertNotIn(profile_d.id, eligible_ids)
+
 
 @override_settings(
     STORAGES={
