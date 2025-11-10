@@ -32,6 +32,17 @@ class Election(models.Model):
     voting_opens = models.DateTimeField(help_text="When voting opens")
     voting_closes = models.DateTimeField(help_text="When voting closes")
 
+    # District seat configuration
+    at_large_seats_count = models.IntegerField(default=5, help_text="Number of at-large seats")
+    district_seat_min_votes = models.IntegerField(
+        default=5,
+        help_text="Minimum votes from district members required to win district seat",
+    )
+    district_seat_min_voters = models.IntegerField(
+        default=5,
+        help_text="Minimum voters in a district required to activate that district's seat",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -45,6 +56,72 @@ class Election(models.Model):
             cls.objects.filter(membership_eligibility_deadline__gte=timezone.now())
             .order_by("membership_eligibility_deadline")
             .first()
+        )
+
+    def get_eligible_voters(self):
+        """
+        Get a QuerySet of profiles for users who were eligible voters as of the
+        membership eligibility deadline.
+
+        A user is eligible if they meet any of the membership criteria:
+        - Active Membership record
+        - Discord activity within 30 days (before deadline)
+        - Active Stripe subscription
+        """
+        from datetime import timedelta
+
+        from django.db.models import Q
+
+        from profiles.models import Profile
+
+        # Use the deadline as a single point in time (already a timezone-aware datetime)
+        deadline = self.membership_eligibility_deadline
+
+        # Calculate Discord activity window (30 days before deadline)
+        discord_start = deadline - timedelta(days=30)
+
+        # Build query for users who were members as of the deadline
+        # 1. Explicit Membership record active on deadline
+        membership_record_query = Q(memberships__start_date__lte=deadline) & (
+            Q(memberships__end_date__isnull=True) | Q(memberships__end_date__gte=deadline)
+        )
+
+        # 2. Discord activity within 30 days before deadline
+        # User must have BOTH a linked Discord account AND recent activity
+        discord_activity_query = Q(socialaccount__provider="discord") & Q(
+            profile__discord_activity__date__gte=discord_start,
+            profile__discord_activity__date__lte=deadline,
+        )
+
+        # 3. Stripe subscription active as of deadline
+        # We need to check BOTH:
+        # a) Historical invoices (for past billing periods that have ended)
+        # b) Current subscription periods (for ongoing subscriptions without invoices yet)
+        # This is because invoices are only created after a billing period ends
+        deadline_start = deadline.replace(hour=0, minute=0, second=0, microsecond=0)
+        deadline_end = deadline.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+        stripe_invoice_query = Q(
+            djstripe_customers__subscriptions__invoices__period_start__lte=deadline_end,
+            djstripe_customers__subscriptions__invoices__period_end__gte=deadline_start,
+            djstripe_customers__subscriptions__invoices__status="paid",
+        )
+        stripe_current_period_query = Q(
+            djstripe_customers__subscriptions__current_period_start__lte=deadline_end,
+            djstripe_customers__subscriptions__current_period_end__gte=deadline_start,
+        )
+        stripe_subscription_query = stripe_invoice_query | stripe_current_period_query
+
+        # Combine all three criteria with OR
+        eligible_users_query = (
+            membership_record_query | discord_activity_query | stripe_subscription_query
+        )
+
+        # Get profiles for eligible users
+        return (
+            Profile.objects.filter(user__in=User.objects.filter(eligible_users_query))
+            .select_related("user")
+            .distinct()
         )
 
     def is_nominations_open(self):
@@ -247,3 +324,100 @@ class Nomination(models.Model):
         # Send email notification for new non-draft nominations (but skip self-nominations)
         if not self.draft and (is_new or was_draft) and not is_self_nomination:
             self.nominee.send_notification_email(self)
+
+
+class Question(models.Model):
+    """
+    Represents a yes/no question attached to an election ballot.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    election = models.ForeignKey(Election, on_delete=models.CASCADE, related_name="questions")
+    question_text = models.TextField(help_text="The question to ask voters")
+    description = models.TextField(
+        blank=True, default="", help_text="Optional description or context for the question"
+    )
+    order = models.IntegerField(default=0, help_text="Display order (lower numbers appear first)")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["order", "created_at"]
+        unique_together = ("election", "order")
+
+    def __str__(self):
+        return f"{self.election.title}: {self.question_text[:50]}"
+
+
+class Ballot(models.Model):
+    """
+    Represents a user's ballot for an election.
+    Contains all votes for candidates and questions.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    election = models.ForeignKey(Election, on_delete=models.CASCADE, related_name="ballots")
+    voter = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ballots")
+
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("election", "voter")
+        ordering = ["-submitted_at"]
+        indexes = [
+            models.Index(fields=["election", "-submitted_at"]),
+        ]
+
+    def __str__(self):
+        voter_name = self.voter.get_full_name() or self.voter.email
+        return f"{voter_name}'s ballot for {self.election.title}"
+
+    def get_candidate_votes(self):
+        """Return QuerySet of all candidate votes on this ballot."""
+        return self.candidate_votes.select_related("nominee__user")
+
+    def get_question_votes(self):
+        """Return QuerySet of all question votes on this ballot."""
+        return self.question_votes.select_related("question")
+
+
+class Vote(models.Model):
+    """
+    Represents an approval vote for a candidate on a ballot.
+    """
+
+    ballot = models.ForeignKey(Ballot, on_delete=models.CASCADE, related_name="candidate_votes")
+    nominee = models.ForeignKey(Nominee, on_delete=models.CASCADE, related_name="votes")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("ballot", "nominee")
+        indexes = [
+            models.Index(fields=["ballot"]),
+            models.Index(fields=["nominee"]),
+        ]
+
+    def __str__(self):
+        return f"Vote for {self.nominee.get_display_name()} on ballot {self.ballot.id}"
+
+
+class QuestionVote(models.Model):
+    """
+    Represents a yes/no vote on a ballot question.
+    """
+
+    ballot = models.ForeignKey(Ballot, on_delete=models.CASCADE, related_name="question_votes")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="votes")
+    answer = models.BooleanField(help_text="True = Yes, False = No")
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ("ballot", "question")
+
+    def __str__(self):
+        answer_text = "Yes" if self.answer else "No"
+        return f"{answer_text} on question {self.question.id}"

@@ -42,4 +42,15 @@ urlpatterns = [
         views.nominee_profile_edit,
         name="nominee_profile_edit",
     ),
+    # Voting
+    path(
+        "<slug:election_slug>/vote/",
+        views.vote,
+        name="election_vote",
+    ),
+    path(
+        "<slug:election_slug>/results/",
+        views.election_results,
+        name="election_results",
+    ),
 ]

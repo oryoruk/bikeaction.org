@@ -2,7 +2,15 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html
 
-from elections.models import Election, Nomination, Nominee
+from elections.models import (
+    Ballot,
+    Election,
+    Nomination,
+    Nominee,
+    Question,
+    QuestionVote,
+    Vote,
+)
 
 
 class NominationInline(admin.TabularInline):
@@ -23,6 +31,7 @@ class ElectionAdmin(admin.ModelAdmin):
         "voting_open_status",
         "voting_closed_status",
         "nominee_count",
+        "preview_voting_booth",
     )
     search_fields = ("title", "description")
     ordering = ("-membership_eligibility_deadline",)
@@ -69,6 +78,14 @@ class ElectionAdmin(admin.ModelAdmin):
         )
 
     nominee_count.short_description = "Nominees"
+
+    def preview_voting_booth(self, obj):
+        from django.urls import reverse
+
+        url = reverse("election_vote", args=[obj.slug]) + "?preview=true"
+        return format_html('<a href="{}" target="_blank">Preview</a>', url)
+
+    preview_voting_booth.short_description = "Preview Voting"
 
 
 class NomineeAdmin(admin.ModelAdmin):
@@ -169,6 +186,93 @@ class NominationAdmin(admin.ModelAdmin):
     )
 
 
+class QuestionInline(admin.TabularInline):
+    model = Question
+    extra = 0
+    fields = ("question_text", "description", "order")
+    ordering = ("order",)
+
+
+class VoteInline(admin.TabularInline):
+    model = Vote
+    extra = 0
+    fields = ("nominee", "created_at")
+    readonly_fields = ("nominee", "created_at")
+    can_delete = False
+
+
+class QuestionVoteInline(admin.TabularInline):
+    model = QuestionVote
+    extra = 0
+    fields = ("question", "answer", "created_at")
+    readonly_fields = ("question", "answer", "created_at")
+    can_delete = False
+
+
+class BallotAdmin(admin.ModelAdmin):
+    list_display = (
+        "voter",
+        "election",
+        "submitted_at",
+        "candidate_vote_count",
+        "question_vote_count",
+    )
+    list_filter = ("election", "submitted_at")
+    search_fields = ("voter__first_name", "voter__last_name", "voter__email")
+    readonly_fields = ("id", "submitted_at", "updated_at")
+    ordering = ("-submitted_at",)
+    inlines = [VoteInline, QuestionVoteInline]
+
+    def candidate_vote_count(self, obj):
+        return obj.candidate_votes.count()
+
+    candidate_vote_count.short_description = "Candidate Votes"
+
+    def question_vote_count(self, obj):
+        return obj.question_votes.count()
+
+    question_vote_count.short_description = "Question Votes"
+
+
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ("question_text", "election", "order", "vote_count")
+    list_filter = ("election",)
+    search_fields = ("question_text",)
+    ordering = ("election", "order")
+
+    def vote_count(self, obj):
+        return obj.votes.count()
+
+    vote_count.short_description = "Votes"
+
+
+class VoteAdmin(admin.ModelAdmin):
+    list_display = ("ballot", "nominee", "created_at")
+    list_filter = ("ballot__election", "created_at")
+    search_fields = (
+        "ballot__voter__first_name",
+        "ballot__voter__last_name",
+        "nominee__user__first_name",
+        "nominee__user__last_name",
+    )
+    readonly_fields = ("created_at",)
+    ordering = ("-created_at",)
+
+
+class QuestionVoteAdmin(admin.ModelAdmin):
+    list_display = ("ballot", "question", "answer", "created_at")
+    list_filter = ("ballot__election", "answer", "created_at")
+    readonly_fields = ("created_at",)
+    ordering = ("-created_at",)
+
+
+# Update ElectionAdmin to include Questions inline
+ElectionAdmin.inlines = [QuestionInline]
+
 admin.site.register(Election, ElectionAdmin)
 admin.site.register(Nominee, NomineeAdmin)
 admin.site.register(Nomination, NominationAdmin)
+admin.site.register(Ballot, BallotAdmin)
+admin.site.register(Question, QuestionAdmin)
+admin.site.register(Vote, VoteAdmin)
+admin.site.register(QuestionVote, QuestionVoteAdmin)

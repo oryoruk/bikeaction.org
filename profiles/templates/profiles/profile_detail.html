@@ -137,6 +137,23 @@
     </table>
   </div>
 
+  {% if voting_open_election %}
+  <div style="padding: 1.5rem; background-color: #e8f4f8; border-left: 4px solid #007bff; margin: 1rem 0;">
+    <h3 style="margin: 0 0 0.5rem 0;"><i class="fa-solid fa-vote-yea"></i> Voting Open: {{ voting_open_election.title }}</h3>
+    {% if user_ballot %}
+    <p style="margin: 0.5rem 0;">You submitted your ballot on {{ user_ballot.submitted_at|date:"F d, Y g:i A" }}. You can change your votes at any time until voting closes.</p>
+    {% else %}
+    <p style="margin: 0.5rem 0;">Voting is now open! You were eligible as of the membership deadline ({{ voting_open_election.membership_eligibility_deadline|date:"F d, Y" }}), so you can vote in this election.</p>
+    {% endif %}
+    <p style="margin: 0.5rem 0;"><strong>Voting closes:</strong> {{ voting_open_election.voting_closes|date:"F d, Y g:i A" }}</p>
+    <p style="margin: 1rem 0 0 0;">
+      <a href="{% url 'election_vote' voting_open_election.slug %}" class="submit-button">
+        {% if user_ballot %}Update Your Ballot{% else %}Cast Your Ballot{% endif %}
+      </a>
+    </p>
+  </div>
+  {% endif %}
+
   {% if upcoming_election and current_eligibility.eligible and not election_eligibility.eligible %}
   <div style="padding: 1rem; background-color: #f5f5f5; border-left: 4px solid #9ca3af; margin: 1rem 0;">
     <p style="margin: 0 0 0.5rem 0;"><strong><i class="fa-solid fa-exclamation-triangle"></i> Upcoming Election: {{ upcoming_election.title }}</strong></p>

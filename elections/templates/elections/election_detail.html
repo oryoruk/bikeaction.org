@@ -43,6 +43,18 @@
     </div>
     {% endif %}
 
+    {% if can_vote %}
+    <div class="action-buttons">
+      <a href="{% url 'election_vote' election.slug %}" class="submit-button">Vote Now</a>
+    </div>
+    {% endif %}
+
+    {% if voting_closed %}
+    <div class="action-buttons">
+      <a href="{% url 'election_results' election.slug %}" class="submit-button">View Results</a>
+    </div>
+    {% endif %}
+
     {% if can_nominate %}
     <div class="action-buttons">
       <a href="{% url 'nomination_form' election.slug %}" class="submit-button">Submit a Nomination</a>

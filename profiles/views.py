@@ -29,7 +29,7 @@ class ProfileDetailView(LoginRequiredMixin, DetailView):
 
         from django.utils import timezone
 
-        from elections.models import Election, Nomination, Nominee
+        from elections.models import Ballot, Election, Nomination, Nominee
 
         context = super().get_context_data(**kwargs)
         context["today"] = timezone.now().date()
@@ -115,6 +115,22 @@ class ProfileDetailView(LoginRequiredMixin, DetailView):
                     open_nomination_elections.append(election)
 
         context["open_nomination_elections"] = open_nomination_elections
+
+        # Check for open voting elections where user is eligible
+        voting_open_elections = Election.objects.filter(
+            voting_opens__lte=timezone.now(), voting_closes__gt=timezone.now()
+        ).order_by("voting_closes")
+
+        for election in voting_open_elections:
+            # Check if user was eligible as of membership deadline
+            eligible_voters = election.get_eligible_voters()
+            if self.request.user.profile in eligible_voters:
+                context["voting_open_election"] = election
+                # Check if user has already voted
+                context["user_ballot"] = Ballot.objects.filter(
+                    election=election, voter=self.request.user
+                ).first()
+                break
 
         return context
 

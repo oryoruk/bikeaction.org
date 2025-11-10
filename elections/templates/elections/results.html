@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-header">
+  <h1>{{ election.title }} - Results</h1>
+
+  <div style="text-align: left;">
+    <p>
+      <b>Voting closed:</b> {{ election.voting_closes|date:"F j, Y g:i A" }}
+    </p>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 4px;">
+      <div style="text-align: center;">
+        <div style="font-size: 2em; font-weight: bold; color: #007bff;">{{ eligible_voters_count }}</div>
+        <div style="color: #666; margin-top: 0.25rem;">Eligible Voters</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 2em; font-weight: bold; color: #28a745;">{{ total_ballots }}</div>
+        <div style="color: #666; margin-top: 0.25rem;">Ballots Cast</div>
+      </div>
+      <div style="text-align: center;">
+        <div style="font-size: 2em; font-weight: bold; color: #17a2b8;">{% widthratio total_ballots eligible_voters_count 100 %}%</div>
+        <div style="color: #666; margin-top: 0.25rem;">Turnout Rate</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="form-container">
+  <div style="margin-bottom: 1.5rem;">
+    <h2 style="margin: 0;">Board Election Results</h2>
+    <p style="margin: 0.5rem 0 0 0; color: #666;">
+      District seat winners (by district number), then at-large winners (alphabetically).
+    </p>
+  </div>
+
+  <div style="display: grid; gap: 0.75rem;">
+    {% for candidate in all_candidates %}
+    <div class="candidate-row{% if not candidate.seat_type %} non-winner{% endif %}" style="padding: 0.75rem 1rem; border: 1px solid {% if candidate.seat_type %}#28a745{% else %}#ddd{% endif %}; border-radius: 4px; {% if candidate.seat_type %}background-color: #f8fff9;{% endif %}{% if not candidate.seat_type %} display: none;{% endif %}">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="flex: 1;">
+          <span style="font-weight: {% if candidate.seat_type %}bold{% else %}normal{% endif %};">
+            {{ candidate.nominee.get_display_name }}
+            {% if candidate.district_num %}
+            <span style="color: #666; font-weight: normal;">(District {{ candidate.district_num }})</span>
+            {% endif %}
+          </span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <div style="text-align: right;">
+            <div style="font-weight: bold;">{{ candidate.total_votes }} vote{{ candidate.total_votes|pluralize }}</div>
+            {% if candidate.district_num and candidate.district_votes > 0 %}
+            <div style="color: #666; font-size: 0.9em;">{{ candidate.district_votes }} from District {{ candidate.district_num }}</div>
+            {% endif %}
+          </div>
+          {% if candidate.seat_type == 'district' %}
+          <div style="background-color: #28a745; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: bold; font-size: 0.85em;">
+            DISTRICT
+          </div>
+          {% elif candidate.seat_type == 'at_large' %}
+          <div style="background-color: #007bff; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; font-weight: bold; font-size: 0.85em;">
+            AT-LARGE
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div style="margin-top: 1rem; margin-bottom: 2rem; text-align: center;">
+    <span id="toggleAllNominees" style="color: #666; text-decoration: underline; cursor: pointer;">Show all nominees</span>
+  </div>
+
+  <script>
+    document.getElementById('toggleAllNominees').addEventListener('click', function() {
+      const nonWinners = document.querySelectorAll('.non-winner');
+      const link = this;
+      const isHidden = nonWinners[0].style.display === 'none';
+
+      nonWinners.forEach(function(element) {
+        element.style.display = isHidden ? 'block' : 'none';
+      });
+
+      link.textContent = isHidden ? 'Show elected only' : 'Show all nominees';
+    });
+  </script>
+
+  {% if question_results %}
+  <h2>Question Results</h2>
+  <div style="display: grid; gap: 1.5rem;">
+    {% for question, yes_count, no_count in question_results %}
+    <div style="padding: 1rem; border: 1px solid #ddd; border-radius: 4px;">
+      <div style="font-weight: bold; margin-bottom: 1rem;">{{ question.question_text }}</div>
+      {% widthratio yes_count yes_count|add:no_count 100 as yes_percent %}
+      {% widthratio no_count yes_count|add:no_count 100 as no_percent %}
+      <div style="display: flex; gap: 2rem; align-items: center;">
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span><b>Yes:</b> {{ yes_count }} vote{{ yes_count|pluralize }}</span>
+            <span>{{ yes_percent }}%</span>
+          </div>
+          <div style="background-color: #e9ecef; border-radius: 4px; overflow: hidden; height: 24px;">
+            <div style="background-color: #28a745; height: 100%; width: {{ yes_percent }}%;"></div>
+          </div>
+        </div>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span><b>No:</b> {{ no_count }} vote{{ no_count|pluralize }}</span>
+            <span>{{ no_percent }}%</span>
+          </div>
+          <div style="background-color: #e9ecef; border-radius: 4px; overflow: hidden; height: 24px;">
+            <div style="background-color: #dc3545; height: 100%; width: {{ no_percent }}%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

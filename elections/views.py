@@ -7,7 +7,16 @@ from django.urls import reverse
 from django.utils import timezone
 
 from elections.forms import NominationForm, NomineeProfileForm
-from elections.models import Election, Nomination, Nominee, get_user_display_name
+from elections.models import (
+    Ballot,
+    Election,
+    Nomination,
+    Nominee,
+    Question,
+    QuestionVote,
+    Vote,
+    get_user_display_name,
+)
 
 
 @login_required
@@ -221,10 +230,18 @@ def election_detail(request, election_slug):
 
     # Get user's nominations if logged in
     user_nominations = []
+    can_vote = False
+    voting_closed = timezone.now() >= election.voting_closes
+
     if request.user.is_authenticated:
         user_nominations = Nomination.objects.filter(
             nominee__election=election, nominator=request.user
         ).select_related("nominee")
+
+        # Check if user is eligible to vote
+        if election.is_voting_open() and hasattr(request.user, "profile"):
+            eligible_voters = election.get_eligible_voters()
+            can_vote = request.user.profile in eligible_voters
 
     return render(
         request,
@@ -233,6 +250,8 @@ def election_detail(request, election_slug):
             "election": election,
             "user_nominations": user_nominations,
             "can_nominate": request.user.is_authenticated and election.is_nominations_open(),
+            "can_vote": can_vote,
+            "voting_closed": voting_closed,
         },
     )
 
@@ -538,3 +557,369 @@ def nominee_profile_edit(request, election_slug, nominee_id):
             "self_nomination_id": self_nomination_id,
         },
     )
+
+
+@login_required
+def vote(request, election_slug):
+    """Cast or update ballot for an election."""
+    election = get_object_or_404(Election, slug=election_slug)
+
+    # Check if user profile is complete
+    if not request.user.profile.complete:
+        messages.error(
+            request,
+            "Your profile must be complete to vote. Please complete your profile.",
+        )
+        return redirect("profile")
+
+    # Check if user was eligible as of the membership eligibility deadline
+    eligible_voters = election.get_eligible_voters()
+    if request.user.profile not in eligible_voters:
+        messages.error(
+            request,
+            f"You must have been a member in good standing as of "
+            f"{election.membership_eligibility_deadline.strftime('%B %d, %Y')} "
+            f"to vote in this election.",
+        )
+        return redirect("profile")
+
+    # Check if this is a preview request (eligible voters only)
+    preview_mode = request.GET.get("preview") == "true"
+
+    if not preview_mode:
+        # Check if voting is open
+        if not election.is_voting_open():
+            if timezone.now() < election.voting_opens:
+                messages.error(request, "Voting has not yet opened for this election.")
+            else:
+                messages.error(request, "Voting has closed for this election.")
+            return redirect("profile")
+
+    # Get eligible nominees (accepted at least one nomination)
+    # First get the IDs of nominees with accepted nominations
+    eligible_nominee_ids = (
+        Nominee.objects.filter(
+            election=election,
+            nominations__acceptance_status=Nomination.AcceptanceStatus.ACCEPTED,
+            nominations__draft=False,
+        )
+        .values_list("id", flat=True)
+        .distinct()
+    )
+    # Then get the full nominee objects and randomize order
+    nominees = (
+        Nominee.objects.filter(id__in=eligible_nominee_ids)
+        .select_related("user__profile")
+        .order_by("?")  # Random order
+    )
+
+    # Get questions for this election
+    questions = Question.objects.filter(election=election).order_by("order")
+
+    # Calculate available seats (district seats only count if district has enough voters)
+    # Use the already-fetched eligible_voters from above
+    eligible_voters_qs = eligible_voters
+
+    # Count voters per district (districts 1-10)
+    from collections import Counter
+
+    district_voter_counts = Counter()
+    for profile in eligible_voters_qs:
+        district = profile.district
+        if district:
+            # Extract district number from name (e.g., "District 5" -> 5)
+            import re
+
+            match = re.search(r"\d+", district.name)
+            if match:
+                district_num = int(match.group())
+                district_voter_counts[district_num] += 1
+
+    # Get list of activated districts
+    activated_districts = sorted(
+        [
+            district_num
+            for district_num, count in district_voter_counts.items()
+            if count >= election.district_seat_min_voters
+        ]
+    )
+    activated_district_seats = len(activated_districts)
+    total_available_seats = activated_district_seats + election.at_large_seats_count
+
+    # Get or create ballot (unless in preview mode)
+    ballot = None
+    ballot_created = True
+    existing_nominee_ids = set()
+    existing_question_votes = {}
+
+    if preview_mode:
+        # In preview mode, don't create or retrieve a ballot
+        if request.method == "POST":
+            messages.warning(
+                request,
+                "This is a preview - your ballot was not saved. Voting is not yet open.",
+            )
+            return redirect(request.path + "?preview=true")
+    else:
+        # Normal voting mode
+        ballot, ballot_created = Ballot.objects.get_or_create(
+            election=election, voter=request.user
+        )
+
+        if request.method == "POST":
+            # Clear existing votes (allow changes)
+            ballot.candidate_votes.all().delete()
+            ballot.question_votes.all().delete()
+
+            # Process candidate votes
+            nominee_ids = request.POST.getlist("nominees")
+            for nominee_id in nominee_ids:
+                try:
+                    nominee = nominees.get(id=nominee_id)
+                    Vote.objects.create(ballot=ballot, nominee=nominee)
+                except Nominee.DoesNotExist:
+                    pass
+
+            # Process question votes
+            for question in questions:
+                answer_value = request.POST.get(f"question_{question.id}")
+                if answer_value in ["yes", "no"]:
+                    QuestionVote.objects.create(
+                        ballot=ballot, question=question, answer=(answer_value == "yes")
+                    )
+
+            messages.success(
+                request,
+                "Your ballot has been saved! You can change your votes until voting closes.",
+            )
+            return redirect("profile")
+
+        # Get existing votes for this ballot
+        existing_nominee_ids = set(ballot.candidate_votes.values_list("nominee_id", flat=True))
+        existing_question_votes = {qv.question_id: qv.answer for qv in ballot.question_votes.all()}
+
+    return render(
+        request,
+        "elections/vote.html",
+        {
+            "election": election,
+            "nominees": nominees,
+            "questions": questions,
+            "ballot": ballot,
+            "existing_nominee_ids": existing_nominee_ids,
+            "existing_question_votes": existing_question_votes,
+            "ballot_created": ballot_created,
+            "preview_mode": preview_mode,
+            "total_available_seats": total_available_seats,
+            "activated_district_seats": activated_district_seats,
+            "activated_districts": activated_districts,
+        },
+    )
+
+
+@login_required
+def election_results(request, election_slug):
+    """View election results (only after voting closes)."""
+    election = get_object_or_404(Election, slug=election_slug)
+
+    # Only show results after voting closes
+    if timezone.now() < election.voting_closes:
+        messages.error(request, "Results will be available after voting closes.")
+        return redirect("profile")
+
+    # Calculate results
+    results = calculate_election_results(election)
+
+    return render(
+        request,
+        "elections/results.html",
+        {
+            "election": election,
+            "district_seats": results["district_seats"],
+            "at_large_seats": results["at_large_seats"],
+            "all_candidates": results["all_candidates"],
+            "question_results": results["question_results"],
+            "total_ballots": results["total_ballots"],
+            "eligible_voters_count": results["eligible_voters_count"],
+        },
+    )
+
+
+def calculate_election_results(election):
+    """
+    Calculate election results using district-reserved + at-large seat allocation.
+
+    Returns:
+        dict with keys:
+            - district_seats: list of tuples (district_num, nominee, votes_from_district)
+            - at_large_seats: list of tuples (nominee, total_votes)
+            - question_results: list of tuples (question, yes_count, no_count)
+            - total_ballots: int
+    """
+    from collections import Counter, defaultdict
+
+    # Get all ballots with optimized queries
+    ballots = (
+        Ballot.objects.filter(election=election)
+        .select_related("voter__profile")
+        .prefetch_related("candidate_votes__nominee__user__profile")
+    )
+    total_ballots = ballots.count()
+
+    # Count votes for each nominee
+    nominee_votes = Counter()
+    # Track votes by district for each nominee
+    nominee_district_votes = defaultdict(lambda: defaultdict(int))
+
+    for ballot in ballots:
+        voter_profile = ballot.voter.profile
+        voter_district = voter_profile.district
+
+        # Get district number (extract from "District 5" -> 5)
+        voter_district_num = None
+        if voter_district:
+            import re
+
+            match = re.search(r"\d+", voter_district.name)
+            if match:
+                voter_district_num = int(match.group())
+
+        # Count votes for each nominee (using prefetched data)
+        for vote in ballot.candidate_votes.all():
+            nominee = vote.nominee
+            nominee_votes[nominee] += 1
+
+            # Track district-specific votes if voter has a district
+            if voter_district_num:
+                nominee_district_votes[nominee][voter_district_num] += 1
+
+    # Calculate district seats
+    district_seats = []
+    district_winners = set()
+
+    # Get all district numbers from DistrictFacet
+    import re
+
+    from facets.models import District as DistrictFacet
+
+    district_numbers = []
+    for district_facet in DistrictFacet.objects.all():
+        match = re.search(r"\d+", district_facet.name)
+        if match:
+            district_numbers.append(int(match.group()))
+    district_numbers = sorted(set(district_numbers))  # Remove duplicates and sort
+
+    for district_num in district_numbers:
+        # Count voters in this district
+        voters_in_district = sum(
+            1
+            for ballot in ballots
+            if ballot.voter.profile.district
+            and str(district_num) in ballot.voter.profile.district.name
+        )
+
+        # Only allocate district seat if enough voters
+        if voters_in_district >= election.district_seat_min_voters:
+            # Find candidates from this district who meet minimum vote threshold
+            candidates_for_district = []
+            for nominee in nominee_votes:
+                # Check if nominee is from this district
+                nominee_district = nominee.user.profile.district
+                if nominee_district and str(district_num) in nominee_district.name:
+                    district_vote_count = nominee_district_votes[nominee][district_num]
+                    # Must meet threshold of votes FROM district
+                    if district_vote_count >= election.district_seat_min_votes:
+                        # But winner determined by TOTAL votes (from all voters)
+                        total_votes = nominee_votes[nominee]
+                        candidates_for_district.append((nominee, total_votes, district_vote_count))
+
+            # Select winner (most TOTAL votes, among those who met district threshold)
+            if candidates_for_district:
+                winner, total_votes, district_votes = max(
+                    candidates_for_district, key=lambda x: x[1]
+                )
+                district_seats.append(
+                    {
+                        "district_num": district_num,
+                        "winner": winner,
+                        "total_votes": total_votes,
+                        "district_votes": district_votes,
+                    }
+                )
+                district_winners.add(winner)
+
+    # Calculate at-large seats (from remaining candidates)
+    remaining_candidates = [
+        (nominee, count)
+        for nominee, count in nominee_votes.items()
+        if nominee not in district_winners
+    ]
+    remaining_candidates.sort(key=lambda x: x[1], reverse=True)
+    at_large_seats = remaining_candidates[: election.at_large_seats_count]
+    at_large_winners = {nominee for nominee, _ in at_large_seats}
+
+    # Compile all candidates with results
+    all_candidates = []
+    for nominee, total_votes in nominee_votes.items():
+        nominee_district = nominee.user.profile.district
+        district_num = None
+        if nominee_district:
+            import re
+
+            match = re.search(r"\d+", nominee_district.name)
+            if match:
+                district_num = int(match.group())
+
+        # Determine seat type (if won)
+        seat_type = None
+        if nominee in district_winners:
+            seat_type = "district"
+        elif nominee in at_large_winners:
+            seat_type = "at_large"
+
+        all_candidates.append(
+            {
+                "nominee": nominee,
+                "total_votes": total_votes,
+                "district_num": district_num,
+                "district_votes": (
+                    nominee_district_votes[nominee].get(district_num, 0) if district_num else 0
+                ),
+                "seat_type": seat_type,
+            }
+        )
+
+    # Sort: district seats (by district number),
+    # at-large seats (alphabetically),
+    # then losers (alphabetically)
+    def sort_key(candidate):
+        if candidate["seat_type"] == "district":
+            # District winners first, sorted by district number
+            return (0, candidate["district_num"] or 999, "")
+        elif candidate["seat_type"] == "at_large":
+            # At-large winners second, sorted alphabetically
+            return (1, 0, candidate["nominee"].get_display_name().lower())
+        else:
+            # Non-winners last, sorted alphabetically
+            return (2, 0, candidate["nominee"].get_display_name().lower())
+
+    all_candidates.sort(key=sort_key)
+
+    # Calculate question results
+    question_results = []
+    for question in Question.objects.filter(election=election).order_by("order"):
+        yes_count = QuestionVote.objects.filter(question=question, answer=True).count()
+        no_count = QuestionVote.objects.filter(question=question, answer=False).count()
+        question_results.append((question, yes_count, no_count))
+
+    # Get eligible voters count
+    eligible_voters_count = election.get_eligible_voters().count()
+
+    return {
+        "district_seats": district_seats,
+        "at_large_seats": at_large_seats,
+        "all_candidates": all_candidates,
+        "question_results": question_results,
+        "total_ballots": total_ballots,
+        "eligible_voters_count": eligible_voters_count,
+    }

@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% load elections_extras %}
+
+{% block content %}
+{% if preview_mode %}
+<div style="padding: 1.5rem; background-color: #fff3cd; border-left: 4px solid #ffc107; margin: 1rem 0;">
+  <h3 style="margin: 0 0 0.5rem 0;"><i class="fa-solid fa-eye"></i> Preview Mode</h3>
+  <p style="margin: 0;">
+    This is a preview of the voting booth. Voting has not yet opened. Any votes you submit will not be saved.
+  </p>
+</div>
+{% endif %}
+
+<div class="form-header">
+  <h1>Vote in {{ election.title }}</h1>
+
+  <div style="text-align: center;">
+    <p>
+      <b>Voting Period:</b> {{ election.voting_opens|date:"F j, Y" }} - {{ election.voting_closes|date:"F j, Y" }}
+    </p>
+    <p style="color: #666;">
+      You can change your votes at any time until voting closes on {{ election.voting_closes|date:"F j, Y" }} at {{ election.voting_closes|date:"g:i A" }}.
+    </p>
+
+    {% if not preview_mode and not ballot_created %}
+    <p>
+      <b>You previously submitted a ballot on {{ ballot.submitted_at|date:"F j, Y g:i A" }}.</b>
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="form-container">
+  <form class="application-form" method="post">
+    {% csrf_token %}
+
+    <h2>Board ({{ total_available_seats }} seat{{ total_available_seats|pluralize }} available)</h2>
+    <p style="margin-bottom: 0.5rem;">
+      <b>Approval Voting:</b> Select all candidates you approve of. You may vote for as many or as few candidates as you like.
+    </p>
+    <p style="margin-bottom: 0.5rem; color: #666;">
+      {{ activated_district_seats }} district reserved seat{{ activated_district_seats|pluralize }}{% if activated_districts %} (District{{ activated_districts|length|pluralize }} {{ activated_districts|join:", " }}){% endif %} and {{ election.at_large_seats_count }} at-large seat{{ election.at_large_seats_count|pluralize }} available.
+    </p>
+    <p style="margin-bottom: 1.5rem; color: #666;">
+      Candidates are shown in random order. Click the icon to the right of each candidate's name to view all nominations made for that candidate.
+    </p>
+
+    <div style="display: grid; gap: 0.5rem;">
+      {% for nominee in nominees %}
+      <div style="display: flex; align-items: stretch; gap: 0.75rem;">
+        <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; flex: 1; padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 4px;">
+          <input
+            type="checkbox"
+            name="nominees"
+            value="{{ nominee.id }}"
+            {% if nominee.id in existing_nominee_ids %}checked{% endif %}
+            style="flex-shrink: 0;"
+          />
+          <div style="font-weight: bold;">
+            {{ nominee.get_display_name }}
+            {% if nominee.user.profile.district %}
+            <span style="color: #666; font-weight: normal;">({{ nominee.user.profile.district.name }})</span>
+            {% endif %}
+          </div>
+        </label>
+        <div style="display: flex; align-items: center;">
+          <a href="{% url 'nominee_detail' election_slug=election.slug nominee_slug=nominee.get_slug %}" target="_blank" style="color: #007bff; text-decoration: none;" title="View nominations for {{ nominee.get_display_name }}{% if nominee.user.profile.district %} ({{ nominee.user.profile.district.name }}){% endif %}" aria-label="View nominations for {{ nominee.get_display_name }}{% if nominee.user.profile.district %} ({{ nominee.user.profile.district.name }}){% endif %}">
+            <i class="fa-solid fa-file-lines" style="font-size: 1.2em;"></i>
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <p>No candidates are currently available for this election.</p>
+      {% endfor %}
+    </div>
+
+    {% if questions %}
+    <h2 style="margin-top: 2rem;">Questions</h2>
+    <p style="margin-bottom: 1.5rem;">
+      Vote Yes or No on each question.
+    </p>
+
+    <div style="display: grid; gap: 1.5rem;">
+      {% for question in questions %}
+      {% with answer=existing_question_votes|get_item:question.id %}
+      <div style="padding: 1rem; border: 1px solid #ddd; border-radius: 4px;">
+        <div style="font-weight: bold; margin-bottom: 0.5rem;">{{ question.question_text }}</div>
+        {% if question.description %}
+        <div style="color: #666; margin-bottom: 0.75rem; font-size: 0.95em;">{{ question.description|safe }}</div>
+        {% endif %}
+        <div style="display: flex; gap: 1rem;" data-question-id="{{ question.id }}">
+          <!-- Yes/No order will be randomized by JavaScript -->
+          <label style="flex: 1; padding: 0.75rem; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; text-align: center; font-weight: 500; transition: all 0.2s;" data-option="yes" class="question-option">
+            <input
+              type="checkbox"
+              name="question_{{ question.id }}"
+              value="yes"
+              {% if answer == True %}checked{% endif %}
+              style="display: none;"
+            />
+            <span>Yes</span>
+          </label>
+          <label style="flex: 1; padding: 0.75rem; border: 2px solid #ddd; border-radius: 4px; cursor: pointer; text-align: center; font-weight: 500; transition: all 0.2s;" data-option="no" class="question-option">
+            <input
+              type="checkbox"
+              name="question_{{ question.id }}"
+              value="no"
+              {% if answer == False %}checked{% endif %}
+              style="display: none;"
+            />
+            <span>No</span>
+          </label>
+        </div>
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: center;">
+      <a href="{% url 'profile' %}" class="secondary-button">Cancel</a>
+      <button type="submit" class="submit-button">
+        {% if preview_mode %}Preview Ballot (Not Saved){% else %}Save Ballot{% endif %}
+      </button>
+    </div>
+  </form>
+</div>
+
+<style>
+  .question-option input:checked + span {
+    display: inline-block;
+  }
+  .question-option:has(input:checked) {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+  }
+  .question-option:hover {
+    border-color: #007bff;
+  }
+</style>
+
+<script>
+  // Randomize Yes/No order for each question
+  window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-question-id]').forEach(container => {
+      const labels = Array.from(container.querySelectorAll('label'));
+      // 50% chance to reverse Yes/No order
+      if (Math.random() < 0.5) {
+        labels.reverse().forEach(label => container.appendChild(label));
+      }
+    });
+  });
+
+  // Make question checkboxes mutually exclusive
+  window.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('[data-question-id]').forEach(container => {
+      const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          if (this.checked) {
+            // Uncheck all other checkboxes in this question
+            checkboxes.forEach(otherCheckbox => {
+              if (otherCheckbox !== this) {
+                otherCheckbox.checked = false;
+              }
+            });
+          }
+        });
+      });
+    });
+  });
+
+  // Save ballot state to cookie to preserve selections on page refresh
+  const COOKIE_NAME = 'ballot_{{ election.slug }}';
+  const COOKIE_EXPIRY_DAYS = 7;
+
+  function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+    document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + expires.toUTCString() + ';path=/';
+  }
+
+  function getCookie(name) {
+    const nameEQ = name + '=';
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+      let c = ca[i];
+      while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+      if (c.indexOf(nameEQ) === 0) return decodeURIComponent(c.substring(nameEQ.length, c.length));
+    }
+    return null;
+  }
+
+  function deleteCookie(name) {
+    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/';
+  }
+
+  function saveBallotState() {
+    const state = {
+      nominees: [],
+      questions: {}
+    };
+
+    // Save nominee selections
+    document.querySelectorAll('input[name="nominees"]:checked').forEach(checkbox => {
+      state.nominees.push(checkbox.value);
+    });
+
+    // Save question selections (checkboxes)
+    document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+      if (checkbox.name.startsWith('question_')) {
+        state.questions[checkbox.name] = checkbox.value;
+      }
+    });
+
+    setCookie(COOKIE_NAME, JSON.stringify(state), COOKIE_EXPIRY_DAYS);
+  }
+
+  function loadBallotState() {
+    const savedState = getCookie(COOKIE_NAME);
+    if (!savedState) return;
+
+    try {
+      const state = JSON.parse(savedState);
+
+      // Restore nominee selections
+      if (state.nominees) {
+        state.nominees.forEach(nomineeId => {
+          const checkbox = document.querySelector(`input[name="nominees"][value="${nomineeId}"]`);
+          if (checkbox) checkbox.checked = true;
+        });
+      }
+
+      // Restore question selections
+      if (state.questions) {
+        Object.keys(state.questions).forEach(questionName => {
+          const checkbox = document.querySelector(`input[name="${questionName}"][value="${state.questions[questionName]}"]`);
+          if (checkbox) checkbox.checked = true;
+        });
+      }
+    } catch (e) {
+      console.error('Error loading ballot state:', e);
+    }
+  }
+
+  // Load saved state on page load (only if not from server)
+  window.addEventListener('DOMContentLoaded', function() {
+    // Only load from cookie if there are no server-provided selections
+    const hasServerSelections = document.querySelector('input[name="nominees"]:checked') ||
+                                 document.querySelector('input[type="checkbox"][name^="question_"]:checked');
+    if (!hasServerSelections) {
+      loadBallotState();
+    }
+
+    // Save state on any change
+    document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+      input.addEventListener('change', saveBallotState);
+    });
+
+    // Clear cookie on successful form submission
+    document.querySelector('form').addEventListener('submit', function() {
+      deleteCookie(COOKIE_NAME);
+    });
+  });
+</script>
+{% endblock %}
