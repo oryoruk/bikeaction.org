@@ -4,14 +4,16 @@ import datetime
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from django.db.models import Count, IntegerField, OuterRef, Q, Subquery, Value
+from django.db.models import Count, Exists, IntegerField, OuterRef, Q, Subquery, Value
 from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.safestring import mark_safe
+from djstripe.models import Subscription
 from email_log.models import Email
 
 from facets.models import District, RegisteredCommunityOrganization
+from membership.models import Membership
 from pbaabp.admin import ReadOnlyLeafletGeoAdminMixin
 from profiles.models import DiscordActivity, DoNotEmail, Profile, ShirtOrder
 
@@ -117,31 +119,25 @@ class MemberFilter(admin.SimpleListFilter):
         return ((True, "Yes"), (False, "No"))
 
     def queryset(self, request, queryset):
-        now = timezone.now().date()
-        condition = (
-            Q(
-                Q(user__socialaccount__provider="discord")
-                & Q(discord_activity__date__gte=(now - datetime.timedelta(days=30)))
-            )
-            | Q(user__djstripe_customers__subscriptions__status__in=["active"])
-            | Q(
-                Q(user__memberships__start_date__lte=now)
-                & (
-                    Q(user__memberships__end_date__isnull=True)
-                    | Q(user__memberships__end_date__gte=now)
-                )
-            )
-        )
+        # Use pre-computed annotations from get_queryset for better performance
         if self.value() in (
             "True",
             True,
         ):
-            return queryset.filter(condition).distinct().annotate(total=Count("id"))
+            return queryset.filter(
+                Q(has_discord_activity=True)
+                | Q(has_active_subscription=True)
+                | Q(has_special_membership=True)
+            )
         elif self.value() in (
             "False",
             False,
         ):
-            return queryset.exclude(condition).distinct().annotate(total=Count("id"))
+            return queryset.filter(
+                has_discord_activity=False,
+                has_active_subscription=False,
+                has_special_membership=False,
+            )
         return queryset
 
 
@@ -153,17 +149,17 @@ class MemberByDonationFilter(admin.SimpleListFilter):
         return ((True, "Yes"), (False, "No"))
 
     def queryset(self, request, queryset):
-        condition = Q(user__djstripe_customers__subscriptions__status__in=["active"])
+        # Use pre-computed annotation for better performance
         if self.value() in (
             "True",
             True,
         ):
-            return queryset.filter(condition).distinct().annotate(total=Count("id"))
+            return queryset.filter(has_active_subscription=True)
         elif self.value() in (
             "False",
             False,
         ):
-            return queryset.exclude(condition).distinct().annotate(total=Count("id"))
+            return queryset.filter(has_active_subscription=False)
         return queryset
 
 
@@ -175,20 +171,17 @@ class MemberByDiscordActivityFilter(admin.SimpleListFilter):
         return ((True, "Yes"), (False, "No"))
 
     def queryset(self, request, queryset):
-        condition = Q(
-            Q(user__socialaccount__provider="discord")
-            & Q(discord_activity__date__gte=(timezone.now().date() - datetime.timedelta(days=30)))
-        )
+        # Use pre-computed annotation for better performance
         if self.value() in (
             "True",
             True,
         ):
-            return queryset.filter(condition).distinct().annotate(total=Count("id"))
+            return queryset.filter(has_discord_activity=True)
         elif self.value() in (
             "False",
             False,
         ):
-            return queryset.exclude(condition).distinct().annotate(total=Count("id"))
+            return queryset.filter(has_discord_activity=False)
         return queryset
 
 
@@ -200,20 +193,17 @@ class MemberBySpecialRecognitionFilter(admin.SimpleListFilter):
         return ((True, "Yes"), (False, "No"))
 
     def queryset(self, request, queryset):
-        now = timezone.now().date()
-        condition = Q(
-            user__memberships__start_date__lte=now,
-        ) & (Q(user__memberships__end_date__isnull=True) | Q(user__memberships__end_date__gte=now))
+        # Use pre-computed annotation for better performance
         if self.value() in (
             "True",
             True,
         ):
-            return queryset.filter(condition).distinct()
+            return queryset.filter(has_special_membership=True)
         elif self.value() in (
             "False",
             False,
         ):
-            return queryset.exclude(condition).distinct()
+            return queryset.filter(has_special_membership=False)
         return queryset
 
 
@@ -317,6 +307,37 @@ class ProfileAdmin(ReadOnlyLeafletGeoAdminMixin, admin.ModelAdmin):
 
         # Annotate with email count, defaulting to 0
         queryset = queryset.annotate(email_count_30d=Coalesce(email_count_subquery, Value(0)))
+
+        # Pre-compute membership status flags to avoid expensive joins in filters
+        now = timezone.now().date()
+
+        # Check for active Stripe subscriptions
+        has_active_subscription = Exists(
+            Subscription.objects.filter(
+                customer__subscriber=OuterRef("user"), status__in=["active"]
+            )
+        )
+
+        # Check for Discord activity in last 30 days
+        # Need both Discord connection AND recent activity
+        has_discord_activity = Exists(
+            DiscordActivity.objects.filter(
+                profile=OuterRef("pk"), date__gte=(now - datetime.timedelta(days=30))
+            ).filter(profile__user__socialaccount__provider="discord")
+        )
+
+        # Check for special recognition membership
+        has_special_membership = Exists(
+            Membership.objects.filter(user=OuterRef("user"), start_date__lte=now).filter(
+                Q(end_date__isnull=True) | Q(end_date__gte=now)
+            )
+        )
+
+        queryset = queryset.annotate(
+            has_active_subscription=has_active_subscription,
+            has_discord_activity=has_discord_activity,
+            has_special_membership=has_special_membership,
+        )
 
         return queryset
 
