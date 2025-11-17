@@ -930,6 +930,11 @@ class OrganizerProfileAdmin(ProfileAdmin):
         OrganizerRCOFilter,
     ]
 
+    def has_module_permission(self, request):
+        if request.user:
+            return request.user.profile.is_organizer
+        return False
+
     def has_add_permission(self, request):
         return False
 
@@ -960,7 +965,12 @@ class UserAdmin(BaseUserAdmin):
 
 
 class OrganizerUserAdmin(UserAdmin):
-    list_display = ["email", "first_name", "last_name"]
+    list_display = ["first_name", "last_name"]
+
+    def has_module_permission(self, request):
+        if request.user:
+            return request.user.profile.is_organizer
+        return False
 
     def has_add_permission(self, request):
         return False
@@ -990,5 +1000,6 @@ class DoNotEmailAdmin(admin.ModelAdmin):
     list_filter = ["reason", "created_at"]
     search_fields = ["email"]
     readonly_fields = ["created_at"]
+
 
 admin.site.register(DoNotEmail, DoNotEmailAdmin)

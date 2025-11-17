@@ -24,7 +24,14 @@ class OrganizerAdminSite(admin.AdminSite):
     index_title = "Welcome to the PBA Organizer Admin"
 
     def has_permission(self, request):
-        return request.user.profile.is_organizer
+        if request.user.is_authenticated:
+            return request.user.profile.is_organizer
+        return False
+
+    def has_module_permission(self, request):
+        if request.user:
+            return request.user.profile.is_organizer
+        return False
 
 
 organizer_admin = OrganizerAdminSite(name="organizer_admin")
