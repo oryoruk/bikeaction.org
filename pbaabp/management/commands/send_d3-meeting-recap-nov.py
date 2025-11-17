@@ -7,29 +7,13 @@ SENT = []
 
 
 class Command(BaseCommand):
-    help = "Send D3 meeting recap to anyone who RSVP'd or signed in to the November District 3 monthly meeting"
 
     def handle(self, *args, **options):
-        # Get the event by slug
-        try:
-            event = ScheduledEvent.objects.get(slug="pba-district-3-monthly-meeting")
-        except ScheduledEvent.DoesNotExist:
-            self.stdout.write(
-                self.style.ERROR('Event with slug "pba-district-3-monthly-meeting" not found')
-            )
-            return
+        event = ScheduledEvent.objects.get(slug="pba-district-3-monthly-meeting")
 
-        self.stdout.write(f"Found event: {event.title}")
-
-        # Get all sign-ins for this event
         sign_ins = EventSignIn.objects.filter(event=event)
-        self.stdout.write(f"Found {sign_ins.count()} sign-ins")
-
-        # Get all RSVPs for this event
         rsvps = EventRSVP.objects.filter(event=event).select_related("user")
-        self.stdout.write(f"Found {rsvps.count()} RSVPs")
 
-        # Send email to each person who signed in
         for sign_in in sign_ins:
             if sign_in.email.lower() not in SENT:
                 send_email_message(
@@ -47,9 +31,7 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(f"Skipping duplicate: {sign_in.email}")
 
-        # Send email to each person who RSVP'd
         for rsvp in rsvps:
-            # Get email and name from user object if available, otherwise from RSVP fields
             if rsvp.user:
                 email = rsvp.user.email
                 first_name = rsvp.user.first_name or rsvp.first_name or ""
