@@ -1,0 +1,36 @@
+We’re pleased to announce Philly Bike Action’s 2026 Board of Directors.
+
+
+<table style="width: 100%">
+  <tr>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-adrian-v.jpg"></td><td><b>Adrian V.</b><br>District 1<td>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-jessie-a.jpg"></td><td><b>Jessie A.</b><br>District 2<td>
+  </tr>
+  <tr>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-elise-d.jpg"></td><td><b>Elise D.</b><br>District 3<td>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-jamie-g.jpg"></td><td><b>Jamie G.</b><br>District 4<td>
+  </tr>
+  <tr>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-deb-h.jpg"></td><td><b>Deb H.</b><br>District 5<td>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-david-t.jpg"></td><td><b>David T.</b><br>District 5<td>
+  </tr>
+  <tr>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-gabriel-s.jpg"></td><td><b>Gabriel S.</b><br>District 2<td>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-jacob-p.jpg"></td><td><b>Jacob P.</b><br>District 2<td>
+  </tr>
+  <tr>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-jacob-r.jpg"></td><td><b>Jacob R.</b><br>District 1<td>
+    <td style="text-align: center"><img style="max-width: 100px; max-height: 100px" src="templates/email/election-results-2025/candidate-jason-d.jpg"></td><td><b>Jason D.</b><br>District 3<td>
+  </tr>
+</table>
+
+
+These incoming Directors were elected by fellow Members to steer our organization and manage its resources in 2026\. Information about election results is available [on our website](https://bikeaction.org/elections/board-election-2025/results).
+
+Members also voted to approve the [PBA Strategic Plan](https://prod.cdn.bikeaction.org/documents/PBA_StrategicPlan_2511113.pdf).
+
+Thanks to all the Members who voted in this election. In reaching this important milestone, we truly are Philadelphia’s only all-volunteer, democratically-run bicycle advocacy group. Above all, we thank every candidate who stood for the Board in this election. We depend on our volunteers for everything we do—including Board service—and gratitude goes to every Member who stepped up to this important job.
+
+Our organizing has accomplished far more for safer, liveable streets than anyone thought possible—but there’s so much more to do. As PBA enters this new chapter, we look forward to a new year of bike advocacy, and everything we will accomplish in 2026\.
+
+**Philly Bike Action**
