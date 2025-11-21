@@ -29,7 +29,7 @@ class OrganizerAdminSite(admin.AdminSite):
         return False
 
     def has_module_permission(self, request):
-        if request.user:
+        if request.user.is_authenticated:
             return request.user.profile.is_organizer
         return False
 

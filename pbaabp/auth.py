@@ -15,6 +15,6 @@ ORGANIZER_PERMS = [
 class OrganizerAdminBackend(BaseBackend):
 
     def has_perm(self, user_obj, perm, obj=None):
-        if user_obj and user_obj.profile.is_organizer and perm in ORGANIZER_PERMS:
+        if user_obj.is_authenticated and user_obj.profile.is_organizer and perm in ORGANIZER_PERMS:
             return True
         return False
