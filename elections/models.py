@@ -189,6 +189,18 @@ class Nominee(models.Model):
         ),
     )
 
+    # Final results (set when election is closed and anonymized)
+    final_vote_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Total votes received (set when election is closed)",
+    )
+    final_district_vote_count = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Votes received from nominee's home district (set when election is closed)",
+    )
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -342,6 +354,18 @@ class Question(models.Model):
     )
     order = models.IntegerField(default=0, help_text="Display order (lower numbers appear first)")
 
+    # Final results (set when election is closed and anonymized)
+    final_yes_votes = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Total yes votes (set when election is closed)",
+    )
+    final_no_votes = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Total no votes (set when election is closed)",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -365,6 +389,13 @@ class Ballot(models.Model):
 
     submitted_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    # Track whether ballot had any votes (for turnout calculation after anonymization)
+    had_votes = models.BooleanField(
+        null=True,
+        blank=True,
+        help_text="Whether this ballot had at least one vote (set when election is closed)",
+    )
 
     class Meta:
         unique_together = ("election", "voter")

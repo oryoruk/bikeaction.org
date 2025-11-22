@@ -1,4 +1,8 @@
+from collections import Counter, defaultdict
+
 from django.contrib import admin
+from django.db import transaction
+from django.db.models import Count
 from django.utils import timezone
 from django.utils.html import format_html
 
@@ -22,6 +26,124 @@ class NominationInline(admin.TabularInline):
     show_change_link = True
 
 
+@admin.action(description="Close election (anonymize all ballots)")
+def close_election(modeladmin, request, queryset):
+    """
+    Close an election by anonymizing all ballots.
+    First aggregates and stores final vote counts, then deletes all Vote and QuestionVote
+    records, removing the association between voters and their choices, while keeping
+    Ballot records to track participation.
+    """
+
+    elections_closed = 0
+    total_votes_deleted = 0
+    total_question_votes_deleted = 0
+
+    with transaction.atomic():
+        for election in queryset:
+            # Get all ballots for this election
+            ballots = (
+                Ballot.objects.filter(election=election)
+                .select_related("voter__profile")
+                .prefetch_related("candidate_votes__nominee", "question_votes")
+                .annotate(
+                    num_candidate_votes=Count("candidate_votes"),
+                    num_question_votes=Count("question_votes"),
+                )
+            )
+
+            # Calculate vote counts for each nominee
+            nominee_votes = Counter()
+            # Track votes by district for each nominee
+            nominee_district_votes = defaultdict(lambda: defaultdict(int))
+
+            for ballot in ballots:
+                voter_profile = ballot.voter.profile
+                voter_district = voter_profile.district
+
+                # Get district number (extract from "District 5" -> 5)
+                voter_district_num = None
+                if voter_district:
+                    import re
+
+                    match = re.search(r"\d+", voter_district.name)
+                    if match:
+                        voter_district_num = int(match.group())
+
+                # Count votes for each nominee
+                for vote in ballot.candidate_votes.all():
+                    nominee = vote.nominee
+                    nominee_votes[nominee] += 1
+
+                    # Track district-specific votes if voter has a district
+                    if voter_district_num:
+                        nominee_district_votes[nominee][voter_district_num] += 1
+
+                # Mark ballots that had at least one vote
+                had_any_votes = ballot.num_candidate_votes > 0 or ballot.num_question_votes > 0
+                ballot.had_votes = had_any_votes
+                ballot.save(update_fields=["had_votes"])
+
+            # Store final vote counts for each nominee
+            for nominee in Nominee.objects.filter(election=election):
+                nominee.final_vote_count = nominee_votes.get(nominee, 0)
+
+                # Get nominee's district to find their district votes
+                nominee_district = nominee.user.profile.district
+                nominee_district_num = None
+                if nominee_district:
+                    import re
+
+                    match = re.search(r"\d+", nominee_district.name)
+                    if match:
+                        nominee_district_num = int(match.group())
+
+                if nominee_district_num:
+                    nominee.final_district_vote_count = nominee_district_votes[nominee].get(
+                        nominee_district_num, 0
+                    )
+                else:
+                    nominee.final_district_vote_count = 0
+
+                nominee.save(update_fields=["final_vote_count", "final_district_vote_count"])
+
+            # Store final question vote counts
+            for question in Question.objects.filter(election=election):
+                yes_count = QuestionVote.objects.filter(question=question, answer=True).count()
+                no_count = QuestionVote.objects.filter(question=question, answer=False).count()
+                question.final_yes_votes = yes_count
+                question.final_no_votes = no_count
+                question.save(update_fields=["final_yes_votes", "final_no_votes"])
+
+            # Now delete all votes to anonymize
+            ballot_ids = list(ballots.values_list("id", flat=True))
+
+            # Count and delete all candidate votes
+            votes_deleted = Vote.objects.filter(ballot__in=ballot_ids).delete()[0]
+
+            # Count and delete all question votes
+            question_votes_deleted = QuestionVote.objects.filter(ballot__in=ballot_ids).delete()[0]
+
+            total_votes_deleted += votes_deleted
+            total_question_votes_deleted += question_votes_deleted
+            elections_closed += 1
+
+            modeladmin.message_user(
+                request,
+                f"Closed {election.title}: Stored final results and anonymized "
+                f"{ballots.count()} ballots ({votes_deleted} candidate votes, "
+                f"{question_votes_deleted} question votes deleted)",
+            )
+
+    if elections_closed > 1:
+        modeladmin.message_user(
+            request,
+            f"Successfully closed {elections_closed} elections. "
+            f"Total: {total_votes_deleted} candidate votes and "
+            f"{total_question_votes_deleted} question votes anonymized.",
+        )
+
+
 class ElectionAdmin(admin.ModelAdmin):
     list_display = (
         "title",
@@ -35,6 +157,7 @@ class ElectionAdmin(admin.ModelAdmin):
     )
     search_fields = ("title", "description")
     ordering = ("-membership_eligibility_deadline",)
+    actions = [close_election]
 
     def eligibility_closed(self, obj):
         return timezone.now() >= obj.membership_eligibility_deadline

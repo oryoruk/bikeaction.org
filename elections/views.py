@@ -750,6 +750,9 @@ def calculate_election_results(election):
     """
     Calculate election results using district-reserved + at-large seat allocation.
 
+    If election has been closed (final_vote_count is set), uses stored results.
+    Otherwise calculates from live Vote/QuestionVote records.
+
     Returns:
         dict with keys:
             - district_seats: list of tuples (district_num, nominee, votes_from_district)
@@ -757,75 +760,119 @@ def calculate_election_results(election):
             - question_results: list of tuples (question, yes_count, no_count)
             - total_ballots: int
     """
+    import re
     from collections import Counter, defaultdict
 
     from django.db.models import Count, Q
 
-    # Get all ballots with optimized queries
-    # Only count ballots that have at least one answer (candidate vote OR question vote)
-    ballots = (
-        Ballot.objects.filter(election=election)
-        .select_related("voter__profile")
-        .prefetch_related("candidate_votes__nominee__user__profile", "question_votes")
-        .annotate(
-            num_candidate_votes=Count("candidate_votes"),
-            num_question_votes=Count("question_votes"),
+    # Compile regex once for reuse
+    DISTRICT_NUM_REGEX = re.compile(r"\d+")
+
+    # Check if election has been closed (anonymized)
+    election_closed = Nominee.objects.filter(
+        election=election, final_vote_count__isnull=False
+    ).exists()
+
+    if election_closed:
+        # Use stored results from closed election
+        ballots = Ballot.objects.filter(election=election, had_votes=True).select_related(
+            "voter__profile"
         )
-        .filter(Q(num_candidate_votes__gt=0) | Q(num_question_votes__gt=0))
-    )
-    total_ballots = ballots.count()
+        total_ballots = ballots.count()
 
-    # Count votes for each nominee
-    nominee_votes = Counter()
-    # Track votes by district for each nominee
-    nominee_district_votes = defaultdict(lambda: defaultdict(int))
+        # Get nominee votes from stored data
+        nominee_votes = {}
+        nominee_district_votes = defaultdict(lambda: defaultdict(int))
 
-    for ballot in ballots:
-        voter_profile = ballot.voter.profile
-        voter_district = voter_profile.district
+        for nominee in Nominee.objects.filter(election=election).select_related("user__profile"):
+            nominee_votes[nominee] = nominee.final_vote_count or 0
 
-        # Get district number (extract from "District 5" -> 5)
-        voter_district_num = None
-        if voter_district:
-            import re
+            # Get nominee's district number
+            nominee_district = nominee.user.profile.district
+            if nominee_district:
+                match = DISTRICT_NUM_REGEX.search(nominee_district.name)
+                if match:
+                    nominee_district_num = int(match.group())
+                    nominee_district_votes[nominee][nominee_district_num] = (
+                        nominee.final_district_vote_count or 0
+                    )
+    else:
+        # Calculate from live Vote records
+        # Get all ballots with optimized queries
+        # Only count ballots that have at least one answer (candidate vote OR question vote)
+        ballots = (
+            Ballot.objects.filter(election=election)
+            .select_related("voter__profile")
+            .prefetch_related("candidate_votes__nominee__user__profile", "question_votes")
+            .annotate(
+                num_candidate_votes=Count("candidate_votes"),
+                num_question_votes=Count("question_votes"),
+            )
+            .filter(Q(num_candidate_votes__gt=0) | Q(num_question_votes__gt=0))
+        )
+        total_ballots = ballots.count()
 
-            match = re.search(r"\d+", voter_district.name)
-            if match:
-                voter_district_num = int(match.group())
+        # Count votes for each nominee
+        nominee_votes = Counter()
+        # Track votes by district for each nominee
+        nominee_district_votes = defaultdict(lambda: defaultdict(int))
 
-        # Count votes for each nominee (using prefetched data)
-        for vote in ballot.candidate_votes.all():
-            nominee = vote.nominee
-            nominee_votes[nominee] += 1
+        for ballot in ballots:
+            voter_profile = ballot.voter.profile
+            voter_district = voter_profile.district
 
-            # Track district-specific votes if voter has a district
-            if voter_district_num:
-                nominee_district_votes[nominee][voter_district_num] += 1
+            # Get district number (extract from "District 5" -> 5)
+            voter_district_num = None
+            if voter_district:
+                match = DISTRICT_NUM_REGEX.search(voter_district.name)
+                if match:
+                    voter_district_num = int(match.group())
+
+            # Count votes for each nominee (using prefetched data)
+            for vote in ballot.candidate_votes.all():
+                nominee = vote.nominee
+                nominee_votes[nominee] += 1
+
+                # Track district-specific votes if voter has a district
+                if voter_district_num:
+                    nominee_district_votes[nominee][voter_district_num] += 1
 
     # Calculate district seats
     district_seats = []
     district_winners = set()
 
     # Get all district numbers from DistrictFacet
-    import re
-
     from facets.models import District as DistrictFacet
 
     district_numbers = []
     for district_facet in DistrictFacet.objects.all():
-        match = re.search(r"\d+", district_facet.name)
+        match = DISTRICT_NUM_REGEX.search(district_facet.name)
         if match:
             district_numbers.append(int(match.group()))
     district_numbers = sorted(set(district_numbers))  # Remove duplicates and sort
 
+    # Pre-calculate district info for ballots and nominees to avoid repeated iterations
+    ballot_districts = {}
+    for ballot in ballots:
+        voter_district = ballot.voter.profile.district
+        if voter_district:
+            match = DISTRICT_NUM_REGEX.search(voter_district.name)
+            if match:
+                ballot_districts[ballot.id] = int(match.group())
+
+    nominee_home_districts = {}
+    for nominee in nominee_votes:
+        nominee_district = nominee.user.profile.district
+        if nominee_district:
+            match = DISTRICT_NUM_REGEX.search(nominee_district.name)
+            if match:
+                nominee_home_districts[nominee.id] = int(match.group())
+
+    # Count voters by district
+    voters_by_district = Counter(ballot_districts.values())
+
     for district_num in district_numbers:
-        # Count voters in this district
-        voters_in_district = sum(
-            1
-            for ballot in ballots
-            if ballot.voter.profile.district
-            and str(district_num) in ballot.voter.profile.district.name
-        )
+        voters_in_district = voters_by_district.get(district_num, 0)
 
         # Only allocate district seat if enough voters
         if voters_in_district >= election.district_seat_min_voters:
@@ -833,8 +880,7 @@ def calculate_election_results(election):
             candidates_for_district = []
             for nominee in nominee_votes:
                 # Check if nominee is from this district
-                nominee_district = nominee.user.profile.district
-                if nominee_district and str(district_num) in nominee_district.name:
+                if nominee_home_districts.get(nominee.id) == district_num:
                     district_vote_count = nominee_district_votes[nominee][district_num]
                     # Must meet threshold of votes FROM district
                     if district_vote_count >= election.district_seat_min_votes:
@@ -870,14 +916,8 @@ def calculate_election_results(election):
     # Compile all candidates with results
     all_candidates = []
     for nominee, total_votes in nominee_votes.items():
-        nominee_district = nominee.user.profile.district
-        district_num = None
-        if nominee_district:
-            import re
-
-            match = re.search(r"\d+", nominee_district.name)
-            if match:
-                district_num = int(match.group())
+        # Use pre-calculated district number
+        district_num = nominee_home_districts.get(nominee.id)
 
         # Determine seat type (if won)
         seat_type = None
@@ -916,23 +956,41 @@ def calculate_election_results(election):
 
     # Calculate question results
     question_results = []
-    for question in Question.objects.filter(election=election).order_by("order"):
-        yes_count = QuestionVote.objects.filter(question=question, answer=True).count()
-        no_count = QuestionVote.objects.filter(question=question, answer=False).count()
-        question_results.append((question, yes_count, no_count))
+    if election_closed:
+        # Use stored results
+        for question in Question.objects.filter(election=election).order_by("order"):
+            yes_count = question.final_yes_votes or 0
+            no_count = question.final_no_votes or 0
+            question_results.append((question, yes_count, no_count))
+    else:
+        # Calculate from live votes - use aggregation to get both counts
+        # in single query per question
+        from django.db.models import Case, IntegerField, Sum, When
 
-    # Get eligible voters count
-    eligible_voters_count = election.get_eligible_voters().count()
+        for question in Question.objects.filter(election=election).order_by("order"):
+            vote_counts = QuestionVote.objects.filter(question=question).aggregate(
+                yes_count=Sum(
+                    Case(When(answer=True, then=1), default=0, output_field=IntegerField())
+                ),
+                no_count=Sum(
+                    Case(When(answer=False, then=1), default=0, output_field=IntegerField())
+                ),
+            )
+            yes_count = vote_counts["yes_count"] or 0
+            no_count = vote_counts["no_count"] or 0
+            question_results.append((question, yes_count, no_count))
+
+    # Get eligible voters - call once and cache
+    eligible_voters = election.get_eligible_voters()
+    eligible_voters_count = eligible_voters.count()
 
     # Calculate district-level turnout statistics
     # Count eligible voters by district
     eligible_voters_by_district = Counter()
-    for profile in election.get_eligible_voters():
+    for profile in eligible_voters:
         district = profile.district
         if district:
-            import re
-
-            match = re.search(r"\d+", district.name)
+            match = DISTRICT_NUM_REGEX.search(district.name)
             if match:
                 district_num = int(match.group())
                 eligible_voters_by_district[district_num] += 1
@@ -941,20 +999,12 @@ def calculate_election_results(election):
         else:
             eligible_voters_by_district[None] += 1
 
-    # Count ballots cast by district
+    # Count ballots cast by district - use pre-calculated ballot_districts
     ballots_by_district = Counter()
     for ballot in ballots:
-        voter_profile = ballot.voter.profile
-        voter_district = voter_profile.district
-        if voter_district:
-            import re
-
-            match = re.search(r"\d+", voter_district.name)
-            if match:
-                district_num = int(match.group())
-                ballots_by_district[district_num] += 1
-            else:
-                ballots_by_district[None] += 1
+        district_num = ballot_districts.get(ballot.id)
+        if district_num:
+            ballots_by_district[district_num] += 1
         else:
             ballots_by_district[None] += 1
 
