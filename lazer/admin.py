@@ -118,6 +118,7 @@ class ViolationReportAdmin(ExtraButtonsMixin, admin.ModelAdmin):
         "image_tag_error",
         "image_tag_final",
     )
+    actions = ["bulk_resubmit_violations"]
 
     @button(
         label="Resubmit",
@@ -128,6 +129,21 @@ class ViolationReportAdmin(ExtraButtonsMixin, admin.ModelAdmin):
     def resubmit(self, request, object_id):
         report = ViolationReport.objects.get(pk=object_id)
         submit_violation_report_to_ppa.delay(report.id)
+
+    @admin.action(description="Re-submit selected violations to PPA")
+    def bulk_resubmit_violations(self, request, queryset):
+        """Bulk action to re-submit multiple violation reports to the PPA."""
+        count = 0
+        for report in queryset:
+            # Queue each report for submission
+            submit_violation_report_to_ppa.delay(report.id)
+            count += 1
+
+        self.message_user(
+            request,
+            f"Successfully queued {count} violation report(s) for re-submission to the PPA. "
+            f"Check the Celery worker logs for progress.",
+        )
 
 
 admin.site.register(ViolationSubmission, ViolationSubmissionAdmin)
