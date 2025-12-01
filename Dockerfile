@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get update \
     && apt-get install -y gettext binutils libproj-dev gdal-bin
 
-RUN pip install playwright
+RUN pip install playwright==1.52.0
 RUN playwright install-deps chromium
 
 ENV PYTHONUNBUFFERED=1

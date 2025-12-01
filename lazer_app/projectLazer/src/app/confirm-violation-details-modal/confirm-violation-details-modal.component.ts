@@ -48,9 +48,6 @@ function mapToUrlParams(map: any) {
   standalone: false,
 })
 export class ConfirmViolationDetailsModalComponent implements OnInit {
-  @ViewChild('streetNameModal', { static: true }) streetNameModal!: IonModal;
-  @ViewChild('zipCodeModal', { static: true }) zipCodeModal!: IonModal;
-
   rootUrl: string = '';
 
   make!: string;
@@ -67,39 +64,14 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
   plateState!: string;
   plateNumber!: string;
 
+  // Fields that use dropdown options from ppa-form-data.json
+  // Note: Street Name and Zip Code are now free-text fields
   fields: string[] = [
     'Body Style',
     'Make',
     'Vehicle Color',
-
-    'Block Number',
-    'Street Name',
-    'Zip Code',
-
     'How frequently does this occur?',
   ];
-
-  streetNameOptions: any = this.getOptions('Street Name').map((elem) => {
-    return new Map([
-      ['value', elem],
-      ['text', elem],
-    ]);
-  });
-  streetNameChanged(streetName: string) {
-    this.streetName = streetName;
-    this.streetNameModal.dismiss();
-  }
-
-  zipCodeOptions: any = this.getOptions('Zip Code').map((elem) => {
-    return new Map([
-      ['value', elem],
-      ['text', elem],
-    ]);
-  });
-  zipCodeChanged(zipCode: string) {
-    this.zipCode = zipCode;
-    this.zipCodeModal.dismiss();
-  }
 
   @Input() violation: any;
   @Input() form: any;
@@ -297,7 +269,11 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
     if (this.plateNumber || this.plateState) {
       additionalInfo = `Plate: ${this.plateState!} ${this.plateNumber}`;
     }
-    const params = {
+    // Note: PowerApps forms don't support URL parameter pre-filling like Smartsheet
+    // Opening the form directly - user will need to manually fill fields
+    const submissionUrl = 'https://ppa-forms-neu.powerappsportals.com/Mobility-Access-Request/';
+    console.log('Opening PowerApps form:', submissionUrl);
+    console.log('Form data (for manual entry):', {
       'Date Observed': violationTime.toLocaleDateString('en-US', {
         month: '2-digit',
         day: '2-digit',
@@ -314,11 +290,7 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
       'Street Name': this.streetName,
       'Zip Code': this.zipCode,
       'Additional Information': additionalInfo,
-    };
-    const submissionUrl =
-      'https://app.smartsheet.com/b/form/463e9faa2a644f4fae2a956f331f451c?' +
-      mapToUrlParams(params);
-    console.log(submissionUrl);
+    });
     Browser.open({ url: submissionUrl });
   }
 
@@ -343,13 +315,16 @@ export class ConfirmViolationDetailsModalComponent implements OnInit {
     const addressParser = new AddressParser();
     const parsedAddress = addressParser.parseLocation(this.violation.address);
     this.blockNumber = parsedAddress.number as string;
+
+    // Street Name and Zip Code are now free-text fields - no fuzzy matching needed
     const inputStreetName =
       `${parsedAddress.prefix || ''} ${parsedAddress.street || ''} ${parsedAddress.type || ''}`
         .trim()
         .replace(/\s+/g, ' ');
-    this.streetName = best_match('Street Name', inputStreetName);
-    this.zipCode = best_match('Zip Code', parsedAddress.postal_code as string);
+    this.streetName = inputStreetName.toUpperCase();
+    this.zipCode = (parsedAddress.postal_code as string) || '';
 
+    // Use fuzzy matching for dropdown fields only
     if (this.violation.vehicle!.vehicle?.props?.make_model[0].make) {
       this.make = best_match(
         'Make',

@@ -157,39 +157,26 @@
         ></ion-input>
       </ion-item>
 
-      <ion-item [button]="true" [detail]="false" id="select-streetName">
-        <ion-label>Street Name</ion-label>
-        <div slot="end">{{ streetName }}</div>
+      <ion-item>
+        <ion-input
+          class="ion-text-right"
+          label="Street Name"
+          [(ngModel)]="streetName"
+          name="streetName"
+          required
+        ></ion-input>
       </ion-item>
-      <ion-modal trigger="select-streetName" #streetNameModal>
-        <ng-template>
-          <app-typeahead
-            class="ion-page"
-            title="Street Name"
-            [items]="streetNameOptions"
-            [selectedItem]="streetName"
-            (selectionChange)="streetNameChanged($event)"
-            (selectionCancel)="streetNameModal.dismiss()"
-          ></app-typeahead>
-        </ng-template>
-      </ion-modal>
 
-      <ion-item [button]="true" [detail]="false" id="select-zipCode">
-        <ion-label>Zip Code</ion-label>
-        <div slot="end">{{ zipCode }}</div>
+      <ion-item>
+        <ion-input
+          class="ion-text-right"
+          label="Zip Code"
+          [(ngModel)]="zipCode"
+          name="zipCode"
+          inputmode="numeric"
+          required
+        ></ion-input>
       </ion-item>
-      <ion-modal trigger="select-zipCode" #zipCodeModal>
-        <ng-template>
-          <app-typeahead
-            class="ion-page"
-            title="Zip Code"
-            [items]="zipCodeOptions"
-            [selectedItem]="zipCode"
-            (selectionChange)="zipCodeChanged($event)"
-            (selectionCancel)="zipCodeModal.dismiss()"
-          ></app-typeahead>
-        </ng-template>
-      </ion-modal>
     </ion-list>
 
     <br />
