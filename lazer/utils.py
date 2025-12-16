@@ -87,6 +87,7 @@ def submit_violation_report_to_ppa(violation_report):
 
     violation_report.submitted = timezone.now()
     violation_report.service_id = service_id
+    violation_report.submission_response = response_data
     violation_report.save()
 
 

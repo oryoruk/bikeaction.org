@@ -62,6 +62,7 @@ class ViolationReport(models.Model):
 
     submitted = models.DateTimeField(null=True, blank=True)
     service_id = models.CharField(null=True, blank=True)
+    submission_response = models.JSONField(null=True, blank=True)
 
     def is_submitted(self):
         return self.submitted is not None
