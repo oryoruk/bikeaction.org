@@ -14,6 +14,9 @@ export class AccountService {
   session_key: string | null = null;
   expiry_date: string | null = null;
   isDonor: boolean = false;
+  wrappedAvailable: boolean = false;
+  wrappedUrl: string | null = null;
+  wrappedDismissed: boolean = false;
 
   headers() {
     const headers = new Headers();
@@ -49,6 +52,17 @@ export class AccountService {
       this.loggedIn = true;
       await this.storage.set('loggedIn', this.username);
       await this.storage.set('isDonor', this.isDonor);
+
+      // Check for wrapped availability
+      if (json.wrapped && json.wrapped.available) {
+        this.wrappedAvailable = true;
+        this.wrappedUrl = json.wrapped.share_url;
+        await this.storage.set('wrappedUrl', this.wrappedUrl);
+      } else {
+        this.wrappedAvailable = false;
+        this.wrappedUrl = null;
+      }
+      await this.loadWrappedDismissed();
     } catch (error: any) {
       if (error.message) {
         await this.presentError(error.message);
@@ -80,6 +94,18 @@ export class AccountService {
         key: 'session_key',
         value: this.session_key as string,
       });
+
+      // Check for wrapped availability
+      if (json.wrapped && json.wrapped.available) {
+        this.wrappedAvailable = true;
+        this.wrappedUrl = json.wrapped.share_url;
+        await this.storage.set('wrappedUrl', this.wrappedUrl);
+      } else {
+        this.wrappedAvailable = false;
+        this.wrappedUrl = null;
+      }
+      await this.loadWrappedDismissed();
+
       await this.presentSuccess(json);
     } catch (error: any) {
       console.log(error);
@@ -149,6 +175,24 @@ export class AccountService {
     await this.storage.get('isDonor').then((isDonor) => {
       this.isDonor = isDonor || false;
     });
+    await this.storage.get('wrappedUrl').then((url) => {
+      if (url) {
+        this.wrappedAvailable = true;
+        this.wrappedUrl = url;
+      }
+    });
+    await this.loadWrappedDismissed();
+  }
+
+  async loadWrappedDismissed() {
+    await this.storage.get('wrappedDismissed').then((dismissed) => {
+      this.wrappedDismissed = dismissed || false;
+    });
+  }
+
+  async dismissWrapped() {
+    this.wrappedDismissed = true;
+    await this.storage.set('wrappedDismissed', true);
   }
 
   constructor(

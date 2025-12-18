@@ -31,6 +31,37 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <ion-card *ngIf="accountService.wrappedAvailable && !accountService.wrappedDismissed" color="primary">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="sparkles" style="margin-right: 8px;"></ion-icon>
+        Your 2025 Wrapped is Ready!
+      </ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <p>See your Laser Vision year in review - your stats, streaks, and impact on Philadelphia streets.</p>
+      <br />
+      <ion-button
+        expand="block"
+        fill="solid"
+        color="light"
+        [href]="accountService.wrappedUrl"
+        target="_blank"
+      >
+        <ion-icon name="eye" slot="start"></ion-icon>
+        View Your Wrapped
+      </ion-button>
+      <ion-button
+        expand="block"
+        fill="clear"
+        color="light"
+        (click)="accountService.dismissWrapped()"
+      >
+        Dismiss
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+
   <ion-card *ngIf="accountService.isDonor && accountService.loggedIn">
     <ion-card-header>
       <ion-card-title>Thanks for being part of the Action!</ion-card-title>
