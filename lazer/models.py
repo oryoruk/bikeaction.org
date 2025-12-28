@@ -153,6 +153,10 @@ class LazerWrapped(models.Model):
     top_day_date = models.DateField(null=True, blank=True)
     top_day_count = models.IntegerField(default=0)
 
+    # Vehicle make/model stats
+    top_user_vehicles = models.JSONField(default=list)
+    top_community_vehicles = models.JSONField(default=list)
+
     # Community comparison stats
     rank = models.IntegerField(null=True, blank=True)
     total_users = models.IntegerField(null=True, blank=True)

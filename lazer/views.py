@@ -471,6 +471,42 @@ def calculate_wrapped_stats(user, year):
     if day_counts:
         top_day_date, top_day_count = day_counts.most_common(1)[0]
 
+    # Calculate top 3 reported car make/models for this user
+    user_make_model_counts = Counter()
+    for report in reports:
+        if report.make:
+            # Combine make and model, handle cases where model is None/blank
+            make_model = f"{report.make} {report.model}".strip() if report.model else report.make
+            # Add descriptor for Genesis Unknown (box trucks)
+            if make_model == "Genesis Unknown":
+                make_model = "Genesis Unknown (Box truck)"
+            user_make_model_counts[make_model] += 1
+
+    top_user_vehicles = [
+        {"vehicle": vehicle, "count": count}
+        for vehicle, count in user_make_model_counts.most_common(3)
+    ]
+
+    # Calculate top 3 reported car make/models across all users for this year
+    community_reports = ViolationReport.objects.filter(
+        submitted__isnull=False,
+        submission__captured_at__year=year,
+    ).select_related("submission")
+
+    community_make_model_counts = Counter()
+    for report in community_reports:
+        if report.make:
+            make_model = f"{report.make} {report.model}".strip() if report.model else report.make
+            # Add descriptor for Genesis Unknown (box trucks)
+            if make_model == "Genesis Unknown":
+                make_model = "Genesis Unknown (Box truck)"
+            community_make_model_counts[make_model] += 1
+
+    top_community_vehicles = [
+        {"vehicle": vehicle, "count": count}
+        for vehicle, count in community_make_model_counts.most_common(3)
+    ]
+
     return {
         "total_submissions": total_submissions,
         "total_reports": total_reports,
@@ -485,6 +521,8 @@ def calculate_wrapped_stats(user, year):
         "longest_streak_reports": longest_streak_reports,
         "top_day_date": top_day_date,
         "top_day_count": top_day_count,
+        "top_user_vehicles": top_user_vehicles,
+        "top_community_vehicles": top_community_vehicles,
         "rank": rank,
         "total_users": total_users,
         "percentile": percentile,
@@ -562,6 +600,8 @@ def generate_wrapped_api(request):
         wrapped.longest_streak_reports = stats["longest_streak_reports"]
         wrapped.top_day_date = stats["top_day_date"]
         wrapped.top_day_count = stats["top_day_count"]
+        wrapped.top_user_vehicles = stats["top_user_vehicles"]
+        wrapped.top_community_vehicles = stats["top_community_vehicles"]
         wrapped.rank = stats["rank"]
         wrapped.total_users = stats["total_users"]
         wrapped.percentile = stats["percentile"]
@@ -587,6 +627,8 @@ def generate_wrapped_api(request):
             longest_streak_reports=stats["longest_streak_reports"],
             top_day_date=stats["top_day_date"],
             top_day_count=stats["top_day_count"],
+            top_user_vehicles=stats["top_user_vehicles"],
+            top_community_vehicles=stats["top_community_vehicles"],
             rank=stats["rank"],
             total_users=stats["total_users"],
             percentile=stats["percentile"],
@@ -652,6 +694,8 @@ def my_wrapped(request):
             wrapped.longest_streak_reports = stats["longest_streak_reports"]
             wrapped.top_day_date = stats["top_day_date"]
             wrapped.top_day_count = stats["top_day_count"]
+            wrapped.top_user_vehicles = stats["top_user_vehicles"]
+            wrapped.top_community_vehicles = stats["top_community_vehicles"]
             wrapped.rank = stats["rank"]
             wrapped.total_users = stats["total_users"]
             wrapped.percentile = stats["percentile"]
@@ -676,6 +720,8 @@ def my_wrapped(request):
                 longest_streak_reports=stats["longest_streak_reports"],
                 top_day_date=stats["top_day_date"],
                 top_day_count=stats["top_day_count"],
+                top_user_vehicles=stats["top_user_vehicles"],
+                top_community_vehicles=stats["top_community_vehicles"],
                 rank=stats["rank"],
                 total_users=stats["total_users"],
                 percentile=stats["percentile"],
