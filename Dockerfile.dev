@@ -23,9 +23,6 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PATH="${PATH}:/home/user/.local/bin"
 
-RUN pip install playwright==1.52.0
-RUN playwright install-deps chromium
-
 ARG USER_ID
 ARG GROUP_ID
 RUN groupadd -o -g $GROUP_ID -r usergrp
@@ -34,7 +31,6 @@ RUN mkdir /code
 RUN chown user /code
 
 USER user
-RUN playwright install chromium
 WORKDIR /code
 COPY requirements /code/requirements
 RUN --mount=type=cache,target=/home/user/.cache/pip \
