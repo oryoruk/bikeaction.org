@@ -1,447 +1,1389 @@
-{% extends "base.html" %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{{ wrapped.user.first_name }}'s {{ wrapped.year }} Laser Vision Wrapped</title>
+  <meta name="description" content="{{ wrapped.user.first_name }} reported {{ wrapped.total_reports }} parking violations in {{ wrapped.year }} using Laser Vision!">
+  <meta property="og:title" content="{{ wrapped.user.first_name }}'s {{ wrapped.year }} Laser Vision Wrapped">
+  <meta property="og:description" content="{{ wrapped.user.first_name }} reported {{ wrapped.total_reports }} parking violations in {{ wrapped.year }} using Laser Vision!">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-{% block title %}{{ wrapped.user.first_name }}'s {{ wrapped.year }} Laser Vision Wrapped{% endblock %}
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
 
-{% block description %}{{ wrapped.user.first_name }} reported {{ wrapped.total_reports }} parking violations in {{ wrapped.year }} using Laser Vision!{% endblock %}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      touch-action: manipulation;
+    }
 
-{% block og_title %}{{ wrapped.user.first_name }}'s {{ wrapped.year }} Laser Vision Wrapped{% endblock %}
-{% block og_description %}{{ wrapped.user.first_name }} reported {{ wrapped.total_reports }} parking violations in {{ wrapped.year }} using Laser Vision!{% endblock %}
+    /* Stories container */
+    .stories-container {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
 
-{% block extra_head %}
-<style>
-  .wrapped-container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-  }
+    /* Progress bars at top */
+    .progress-bars {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      gap: 4px;
+      padding: 12px;
+      z-index: 1000;
+    }
 
-  .wrapped-header {
-    text-align: center;
-    margin-bottom: 2em;
-  }
+    .progress-bar {
+      flex: 1;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
 
-  .wrapped-header h1 {
-    font-size: 2.5em;
-    margin-bottom: 0.2em;
-    background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+    .progress-bar-fill {
+      height: 100%;
+      background: rgba(255, 255, 255, 0.9);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
 
-  .wrapped-header .year {
-    font-size: 3em;
-    font-weight: bold;
-    color: #333;
-  }
+    .progress-bar.active .progress-bar-fill {
+      width: 0%;
+    }
 
-  .wrapped-header .subtitle {
-    color: #666;
-    font-size: 1.2em;
-  }
+    .progress-bar.active .progress-bar-fill.animating {
+      width: 100%;
+      transition: width 10s linear;
+    }
 
-  .stat-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 20px;
-    color: white;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-  }
+    .progress-bar.completed .progress-bar-fill {
+      width: 100%;
+    }
 
-  .stat-card.highlight {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  }
+    /* Close button */
+    .close-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-  .stat-card.green {
-    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  }
+    .close-btn:hover {
+      background: rgba(0, 0, 0, 0.7);
+    }
 
-  .stat-card.orange {
-    background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
-  }
+    /* Slides wrapper */
+    .slides-wrapper {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
 
-  .stat-card.blue {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  }
+    /* Individual slide */
+    .slide {
+      flex: 0 0 100%;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 80px 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      position: relative;
+    }
 
-  .stat-card h2 {
-    font-size: 1em;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-    opacity: 0.9;
-  }
+    .slide.highlight {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
 
-  .stat-card .big-number {
-    font-size: 4em;
-    font-weight: bold;
-    line-height: 1;
-    margin-bottom: 10px;
-  }
+    .slide.green {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
 
-  .stat-card .description {
-    font-size: 1.1em;
-    opacity: 0.9;
-  }
+    .slide.orange {
+      background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+    }
 
-  .violation-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
+    .slide.blue {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
 
-  .violation-list li {
-    display: flex;
-    justify-content: space-between;
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-  }
+    .slide.dark {
+      background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    }
 
-  .violation-list li:last-child {
-    border-bottom: none;
-  }
+    .slide.lazer-green {
+      background: linear-gradient(135deg, #64d246 0%, #3a9e2a 100%);
+    }
 
-  .violation-list .count {
-    font-weight: bold;
-  }
+    /* Slide header */
+    .slide-header {
+      position: absolute;
+      top: 50px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.8;
+      font-weight: 600;
+    }
 
-  .street-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
+    /* Slide content */
+    .slide-content {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+      overflow: visible;
+    }
 
-  .street-list li {
-    display: flex;
-    justify-content: space-between;
-    padding: 6px 0;
-  }
+    /* SVG overflow handling */
+    .slide-content object {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
 
-  .monthly-chart {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    height: 120px;
-    padding-top: 20px;
-  }
+    .slide h1 {
+      font-size: clamp(2.5em, 8vw, 4em);
+      margin-bottom: 0.3em;
+      font-weight: bold;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
 
-  .month-bar {
-    flex: 1;
-    margin: 0 2px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
+    .slide h1.title-name {
+      font-size: clamp(3.5em, 10vw, 5em);
+    }
 
-  .month-bar .bar {
-    width: 100%;
-    background: rgba(255,255,255,0.8);
-    border-radius: 4px 4px 0 0;
-    min-height: 4px;
-  }
+    .slide h2 {
+      font-size: clamp(1.1em, 3vw, 1.2em);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      margin-bottom: 1.5em;
+      opacity: 0.9;
+      font-weight: 600;
+    }
 
-  .month-bar .label {
-    font-size: 0.7em;
-    margin-top: 4px;
-    opacity: 0.8;
-  }
+    .slide .big-number {
+      font-size: clamp(5em, 15vw, 8em);
+      font-weight: bold;
+      line-height: 1;
+      margin-bottom: 0.3em;
+      text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
 
-  .month-bar .count {
-    font-size: 0.65em;
-    font-weight: bold;
-    margin-bottom: 2px;
-  }
+    .slide .description {
+      font-size: clamp(1.2em, 4vw, 1.4em);
+      opacity: 0.95;
+      line-height: 1.4;
+      margin-bottom: 1em;
+    }
 
-  .share-section {
-    text-align: center;
-    margin-top: 2em;
-    padding: 20px;
-    background: #f5f5f5;
-    border-radius: 12px;
-  }
+    .slide .subtitle {
+      font-size: clamp(1.5em, 5vw, 2em);
+      opacity: 0.9;
+      margin-top: 0.5em;
+    }
 
-  .share-section h3 {
-    margin-bottom: 1em;
-  }
+    /* Lists in slides */
+    .slide-list {
+      list-style: none;
+      padding: 0;
+      margin: 2em 0;
+      text-align: left;
+    }
 
-  .share-url {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
+    .slide-list li {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+      font-size: clamp(1.1em, 3.5vw, 1.2em);
+    }
 
-  .share-url input {
-    flex: 1;
-    min-width: 200px;
-    max-width: 400px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-size: 0.9em;
-  }
+    .slide-list li:last-child {
+      border-bottom: none;
+    }
 
-  .share-url button {
-    padding: 10px 20px;
-    background: #667eea;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: bold;
-  }
+    .slide-list .count {
+      font-weight: bold;
+      margin-left: 1em;
+    }
 
-  .share-url button:hover {
-    background: #5a6fd6;
-  }
+    /* Monthly chart */
+    .monthly-chart {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      height: 150px;
+      padding: 20px 0;
+      gap: 4px;
+    }
 
-  .first-report {
-    text-align: center;
-    font-style: italic;
-    opacity: 0.9;
-    margin-top: 10px;
-  }
+    .month-bar {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
 
-  .percent-contribution {
-    font-size: 1.1em;
-    font-weight: bold;
-    margin-top: 15px;
-    padding: 10px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 8px;
-  }
+    .month-bar .bar {
+      width: 100%;
+      background: rgba(255,255,255,0.8);
+      border-radius: 4px 4px 0 0;
+      min-height: 4px;
+    }
 
-  .percentile-badge {
-    display: inline-block;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-weight: bold;
-    font-size: 0.9em;
-    margin-top: 10px;
-  }
+    .month-bar .label {
+      font-size: clamp(0.6em, 2.5vw, 0.8em);
+      opacity: 0.8;
+    }
 
-  .percentile-badge.top-10 {
-    background: rgba(255, 215, 0, 0.3);
-    color: #fff;
-  }
+    .month-bar .count {
+      font-size: clamp(0.6em, 2.5vw, 0.75em);
+      font-weight: bold;
+    }
 
-  .percentile-badge.top-25 {
-    background: rgba(255, 255, 255, 0.2);
-    color: #fff;
-  }
+    /* Special elements */
+    .percent-contribution {
+      font-size: clamp(1.2em, 4vw, 1.3em);
+      font-weight: bold;
+      margin-top: 1.5em;
+      padding: 15px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 12px;
+    }
 
-  .comparison {
-    margin-top: 10px;
-    font-size: 0.9em;
-    opacity: 0.8;
-  }
+    .percentile-badge {
+      display: inline-block;
+      padding: 8px 20px;
+      border-radius: 25px;
+      font-weight: bold;
+      font-size: clamp(1.1em, 3.5vw, 1.1em);
+      margin-top: 1em;
+      background: rgba(255, 215, 0, 0.3);
+    }
 
-  .cta-section {
-    text-align: center;
-    margin-top: 2em;
-    padding: 20px;
-  }
+    .comparison {
+      margin-top: 1em;
+      font-size: clamp(1.1em, 3.5vw, 1.1em);
+      opacity: 0.85;
+    }
 
-  .cta-section a {
-    display: inline-block;
-    padding: 15px 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    text-decoration: none;
-    border-radius: 30px;
-    font-weight: bold;
-    font-size: 1.1em;
-  }
+    .first-report {
+      font-style: italic;
+      opacity: 0.9;
+      margin-top: 1em;
+      font-size: clamp(1.1em, 3.5vw, 1.1em);
+    }
 
-  .cta-section a:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  }
+    .community-section {
+      margin-top: 2em;
+      padding-top: 2em;
+      border-top: 1px solid rgba(255,255,255,0.3);
+    }
 
-  .regenerate-section {
-    text-align: center;
-    margin-top: 2em;
-    padding: 20px;
-    border-top: 1px solid #eee;
-  }
+    .community-section h3 {
+      font-size: clamp(0.8em, 3vw, 1em);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1em;
+      opacity: 0.9;
+    }
 
-  .regenerate-btn {
-    display: inline-block;
-    padding: 10px 20px;
-    background: #f5f5f5;
-    color: #666;
-    text-decoration: none;
-    border-radius: 20px;
-    font-size: 0.9em;
-  }
+    /* Share slide specific */
+    .share-content {
+      text-align: center;
+    }
 
-  .regenerate-btn:hover {
-    background: #e5e5e5;
-  }
+    .share-url-container {
+      margin: 2em 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+    }
 
-  .last-updated {
-    font-size: 0.8em;
-    color: #999;
-    margin-top: 10px;
-  }
-</style>
-{% endblock %}
+    .share-url-container input {
+      padding: 15px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      font-size: 1em;
+      background: rgba(255,255,255,0.1);
+      color: white;
+      text-align: center;
+    }
 
-{% block content %}
-<div class="wrapped-container">
-  <div class="wrapped-header">
-    <h1>Laser Vision</h1>
-    <div class="year">{{ wrapped.year }} Wrapped</div>
-    <div class="subtitle">{{ wrapped.user.first_name }}'s Year in Review</div>
-  </div>
+    .share-url-container input::selection {
+      background: rgba(255,255,255,0.3);
+    }
 
-  <div class="stat-card highlight">
-    <h2>Total Reports Filed</h2>
-    <div class="big-number">{{ wrapped.total_reports }}</div>
-    <div class="description">parking violations reported to the Philadelphia Parking Authority</div>
-    {% if wrapped.percent_of_total and wrapped.percent_of_total > 0.1 %}
-    <div class="percent-contribution">That's {{ wrapped.percent_of_total }}% of the {{ wrapped.total_community_reports }} Laser Vision reports in {{ wrapped.year }}!</div>
-    {% endif %}
-    {% if wrapped.first_report_date %}
-    <div class="first-report">First report: {{ wrapped.first_report_date }}</div>
-    {% endif %}
-  </div>
+    .share-url-container button {
+      padding: 15px 30px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
 
-  {% if wrapped.rank and wrapped.percentile >= 50 %}
-  <div class="stat-card green">
-    <h2>Community Ranking</h2>
-    <div class="big-number">#{{ wrapped.rank }}</div>
-    <div class="description">out of {{ wrapped.total_users }} Laser Vision users in {{ wrapped.year }}</div>
-    {% if top_percent and top_percent <= 10 %}
-    <div class="percentile-badge top-10">Top {{ top_percent }}%</div>
-    {% elif top_percent and top_percent <= 25 %}
-    <div class="percentile-badge top-25">Top {{ top_percent }}%</div>
-    {% endif %}
-    <div class="comparison">Average user: {{ wrapped.avg_reports }} reports</div>
-  </div>
-  {% endif %}
+    .share-url-container button:active {
+      background: rgba(255,255,255,0.3);
+    }
 
-  {% if wrapped.longest_streak > 1 %}
-  <div class="stat-card orange">
-    <h2>Longest Streak</h2>
-    <div class="big-number">{{ wrapped.longest_streak }} days</div>
-    <div class="description">{{ wrapped.longest_streak_reports }} reports from {{ wrapped.longest_streak_start|date:"M j" }} to {{ wrapped.longest_streak_end|date:"M j" }}</div>
-  </div>
-  {% endif %}
+    .cta-button {
+      display: inline-block;
+      padding: 15px 40px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      text-decoration: none;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 1.2em;
+      margin-top: 2em;
+      border: 2px solid rgba(255,255,255,0.4);
+    }
 
-  {% if wrapped.top_day_count > 1 %}
-  <div class="stat-card blue">
-    <h2>Busiest Day</h2>
-    <div class="big-number">{{ wrapped.top_day_count }}</div>
-    <div class="description">reports on {{ wrapped.top_day_date|date:"F j, Y" }}</div>
-  </div>
-  {% endif %}
+    .regenerate-link {
+      display: inline-block;
+      margin-top: 2em;
+      color: rgba(255,255,255,0.8);
+      text-decoration: underline;
+      font-size: 0.9em;
+    }
 
-  {% if wrapped.top_user_vehicles %}
-  <div class="stat-card highlight">
-    <h2>Your Top Reported Vehicles</h2>
-    <ul class="violation-list">
-      {% for item in wrapped.top_user_vehicles %}
-      <li>
-        <span>{{ item.vehicle }}</span>
-        <span class="count">{{ item.count }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-    {% if wrapped.top_community_vehicles %}
-    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
-      <h3 style="font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; opacity: 0.9;">Community Top 3</h3>
-      <ul class="violation-list" style="font-size: 0.9em; opacity: 0.85;">
-        {% for item in wrapped.top_community_vehicles %}
-        <li>
-          <span>{{ item.vehicle }}</span>
-          <span class="count">{{ item.count }}</span>
-        </li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-  </div>
-  {% endif %}
+    .last-updated {
+      margin-top: 1em;
+      font-size: 0.8em;
+      opacity: 0.7;
+    }
 
-  {% if wrapped.violations_by_type %}
-  <div class="stat-card">
-    <h2>Violations by Type</h2>
-    <ul class="violation-list">
-      {% for violation, count in wrapped.violations_by_type.items %}
-      <li>
-        <span>{{ violation }}</span>
-        <span class="count">{{ count }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
+    /* Navigation hints */
+    .nav-hint {
+      position: absolute;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9em;
+      opacity: 0.6;
+      animation: fadeInOut 3s ease-in-out infinite;
+    }
 
-  {% if wrapped.reports_by_month %}
-  <div class="stat-card">
-    <h2>Reports by Month</h2>
-    <div class="monthly-chart">
-      {% for data in monthly_data %}
-      <div class="month-bar">
-        <div class="bar" style="height: {{ data.height }}px;"></div>
-        <div class="label">{{ data.month }}</div>
-        {% if data.count > 0 %}<div class="count">{{ data.count }}</div>{% endif %}
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
+    /* Tap zones for navigation */
+    .tap-zone {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 40%;
+      z-index: 10;
+    }
+
+    .tap-zone.left {
+      left: 0;
+    }
+
+    .tap-zone.right {
+      right: 0;
+    }
+
+    /* Desktop: Show cursors */
+    @media (min-width: 768px) {
+      .tap-zone {
+        cursor: pointer;
+      }
+
+      .tap-zone.left {
+        cursor: w-resize;
+      }
+
+      .tap-zone.right {
+        cursor: e-resize;
+      }
+    }
+
+    /* Share button */
+    .share-button {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      padding: 10px 20px;
+      font-size: 0.9em;
+      cursor: pointer;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      transition: all 0.2s ease;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      min-width: 70px;
+      min-height: 40px;
+      touch-action: manipulation;
+    }
+
+    .share-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .share-button:active {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .share-button.copied {
+      background: rgba(76, 175, 80, 0.3);
+      border-color: rgba(76, 175, 80, 0.5);
+    }
+
+    /* Mute button */
+    .mute-button {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      z-index: 1100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .mute-button:hover {
+      background: rgba(0, 0, 0, 0.7);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .mute-button:active {
+      background: rgba(0, 0, 0, 0.8);
+    }
+  </style>
+</head>
+<body>
+  <!-- Background music -->
+  <audio id="bg-music" loop>
+    <source src="{% static 'audio/tunetank.com_3266_let\'s-get-it-started_by_alexguz.mp3' %}" type="audio/mpeg">
+  </audio>
+
+  <div class="stories-container">
+    <!-- Progress bars -->
+    <div class="progress-bars" id="progress-bars"></div>
+
+    <!-- Mute button -->
+    <button class="mute-button" id="mute-button" title="Mute/Unmute">🔇</button>
+
+    <!-- Slides wrapper -->
+    <div class="slides-wrapper" id="slides-wrapper">
+
+      <!-- Slide 1: Title -->
+      <div class="slide lazer-green" data-gradient="default" data-slug="intro">
+        <div class="slide-content">
+          <h1 class="title-name">{{ wrapped.user.first_name }}'s</h1>
+          <h1>Laser Vision Wrapped</h1>
+          <div class="big-number">{{ wrapped.year }}</div>
+          <svg
+             height="30vh"
+             width="auto"
+             viewBox="0 0 512 512"
+             version="1.1"
+             overflow="visible"
+             style="margin: 1em 0; opacity: 0.9; overflow: visible;"
+             xmlns="http://www.w3.org/2000/svg"
+             xmlns:svg="http://www.w3.org/2000/svg">
+            <defs>
+              <pattern
+                 preserveAspectRatio="none"
+                 id="pattern44"
+                 patternTransform="matrix(2.3179597,0.93651651,-1.0488985,2.5961149,0,0)"
+                 patternUnits="userSpaceOnUse"
+                 width="24"
+                 height="10"
+                 x="26"
+                 y="-1">
+                <g style="display:inline">
+                  <path d="M 12,-2 C 9.1666695,-2 7.1679672,-0.56445187 5.4179687,0.68554687 3.6679703,1.9355456 2.1666645,3 0,3 V 5 C 2.8333305,5 4.8320328,3.5644519 6.5820312,2.3144531 8.3320297,1.0644544 9.8333355,0 12,0 14.166665,0 15.667971,1.0644544 17.417969,2.3144531 19.167967,3.5644519 21.166669,5 24,5 V 3 C 21.833335,3 20.332029,1.9355456 18.582031,0.68554687 16.832033,-0.56445189 14.833331,-2 12,-2 Z" />
+                  <path d="M 12,3 C 9.1666695,3 7.1679672,4.4355481 5.4179687,5.6855469 3.6679703,6.9355456 2.1666645,8 0,8 v 2 C 2.8333305,10 4.8320328,8.5644519 6.5820312,7.3144531 8.3320297,6.0644544 9.8333355,5 12,5 14.166665,5 15.667971,6.0644544 17.417969,7.3144531 19.167967,8.5644519 21.166669,10 24,10 V 8 C 21.833335,8 20.332029,6.9355456 18.582031,5.6855469 16.832033,4.4355481 14.833331,3 12,3 Z" />
+                  <path d="M 12,8 C 9.1666695,8 7.1679672,9.4355481 5.4179687,10.685547 3.6679703,11.935546 2.1666645,13 0,13 v 2 C 2.8333305,15 4.8320328,13.564452 6.5820312,12.314453 8.3320297,11.064454 9.8333355,10 12,10 c 2.166665,0 3.667971,1.064454 5.417969,2.314453 C 19.167967,13.564452 21.166669,15 24,15 V 13 C 21.833335,13 20.332029,11.935546 18.582031,10.685547 16.832033,9.4355481 14.833331,8 12,8 Z" />
+                </g>
+              </pattern>
+            </defs>
+            <g transform="matrix(0.89561498,0,0,0.90797728,39.58086,-9.1082668)" style="display:inline">
+              <g transform="matrix(1.0549629,0,0,1.0549629,-120.46846,66.350785)">
+                <g style="display:inline">
+                  <path d="m 366.73603,419.196 c 2.526,-4.714 2.975,-10.268 1.237,-15.328 l -25.673,-74.39 c -3.607,-10.466 -8.944,-20.232 -15.795,-28.916 l -41.676,-55.109 15.284,-79.52 19.739,25.068 c 2.432,3.105 5.588,5.579 9.186,7.214 l 51.9,23.433 c 3.754,1.695 8.036,1.799 11.859,0.285 3.841,-1.514 6.894,-4.516 8.486,-8.313 l 0.156,-0.398 c 3.035,-7.283 0.009,-15.673 -6.981,-19.35 l -46.52,-24.471 -19.609,-40.291 c -9.896,-20.327 -28.839,-34.755961 -51.07,-38.88994 l -20.18,-3.754 c -10.155,-1.878 -20.639,-0.519 -29.98,3.892 l -58.768,27.74894 c -6.522,3.08 -11.678,8.442 -14.515,15.06 l -26.14,61.026 c -1.661,3.875 -1.686,8.26 -0.095,12.152 1.601,3.902 4.706,7.006 8.598,8.607 l 0.588,0.234 c 7.794,3.191 16.72,-0.329 20.241,-7.966 l 23.995,-51.952 37.964,-12.274 -37.628,167.212 -36.641,91.369 c -2.033,5.06 -1.799,10.743 0.614,15.622 2.413,4.896 6.79,8.52 12.04,9.991 l 1.583,0.432 c 8.425,2.352 17.37,-1.289 21.755,-8.858 l 43.432,-75.021 25.881,-51.346 47.22,52.116 34.877,73.896 c 3.936,8.331 13.244,12.69 22.162,10.38 l 0.389,-0.104 c 5.174,-1.339 9.542,-4.781 12.085,-9.487 z" style="display:inline;fill:#000000" />
+                  <path d="m 283.58,81.258 c 22.438,0 40.629,-18.191 40.629,-40.638 C 324.209,18.191 306.018,0 283.58,0 c -22.438,0 -40.628,18.191 -40.628,40.62 0,22.447 18.19,40.638 40.628,40.638 z" style="fill:#000000" />
+                </g>
+                <g style="display:inline" transform="matrix(0.94790063,0,0,0.94790063,114.19213,-62.893951)">
+                  <path style="display:inline;fill:#f16fb7;fill-opacity:1;fill-rule:nonzero;stroke:#d8107d;stroke-width:4.04061;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke" d="m 210.27845,109.26756 c 4.57419,2.44574 603.99057,408.9133 603.99057,408.9133 L 1970.7134,1300.8767 2014.1504,334.51645 217.96251,97.222597 c 0,0 -4.53161,-0.778292 -6.98271,0.581796 -4.84701,2.689557 -5.3792,8.962007 -0.70135,11.463167 z" />
+                  <path style="display:inline;fill:url(#pattern44);fill-opacity:1;fill-rule:nonzero;stroke:#d8107d;stroke-width:4.04052;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke" d="m 210.27845,109.26756 c 4.57419,2.44574 9.66732,5.27855 9.66732,5.27855 L 1893.6184,1248.1739 1975.564,327.26591 217.96251,97.222597 c 0,0 -4.53161,-0.778292 -6.98271,0.581796 -4.84701,2.689557 -5.3792,8.962007 -0.70135,11.463167 z" />
+                </g>
+              </g>
+            </g>
+          </svg>
+          <div class="nav-hint">Tap or swipe to continue →</div>
+        </div>
       </div>
-      {% endfor %}
+
+      <!-- Slide 2: Total Reports -->
+      <div class="slide highlight" data-slug="total-reports">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content">
+          <h2>Total Reports Filed</h2>
+          <div class="big-number">{{ wrapped.total_reports }}</div>
+          <div class="description">parking violations reported to the Philadelphia Parking Authority</div>
+          {% if wrapped.percent_of_total and wrapped.percent_of_total > 0.1 %}
+          <div class="percent-contribution">That's {{ wrapped.percent_of_total }}% of the {{ wrapped.total_community_reports }} Laser Vision reports in {{ wrapped.year }}!</div>
+          {% endif %}
+          {% if wrapped.first_report_date %}
+          <div class="first-report">First report: {{ wrapped.first_report_date }}</div>
+          {% endif %}
+        </div>
+        <button class="share-button" onclick="shareSlide(event, 'total-reports')">Share</button>
+      </div>
+
+      <!-- Slide 3: Community Ranking (conditional) -->
+      {% if wrapped.rank and wrapped.percentile >= 50 %}
+      <div class="slide green" data-slug="ranking">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content">
+          <h2>Community Ranking</h2>
+          <div class="big-number">#{{ wrapped.rank }}</div>
+          <div class="description">out of {{ wrapped.total_users }} Laser Vision users in {{ wrapped.year }}</div>
+          {% if top_percent and top_percent <= 25 %}
+          <div class="percentile-badge">Top {{ top_percent }}%</div>
+          {% endif %}
+          <div class="comparison">Average user: {{ wrapped.avg_reports }} reports</div>
+        </div>
+        <button class="share-button" onclick="shareSlide(event, 'ranking')">Share</button>
+      </div>
+      {% endif %}
+
+      <!-- Slide 4: Longest Streak (conditional) -->
+      {% if wrapped.longest_streak > 1 %}
+      <div class="slide orange" data-slug="streak">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content">
+          <h2>Longest Streak</h2>
+          <div class="big-number">{{ wrapped.longest_streak }}</div>
+          <div class="subtitle">days in a row</div>
+          <div class="description">{{ wrapped.longest_streak_reports }} reports from {{ wrapped.longest_streak_start|date:"M j" }} to {{ wrapped.longest_streak_end|date:"M j" }}</div>
+        </div>
+        <button class="share-button" onclick="shareSlide(event, 'streak')">Share</button>
+      </div>
+      {% endif %}
+
+      <!-- Slide 5: Busiest Day (conditional) -->
+      {% if wrapped.top_day_count > 1 %}
+      <div class="slide blue" data-slug="busiest-day">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content">
+          <h2>Busiest Day</h2>
+          <div class="big-number">{{ wrapped.top_day_count }}</div>
+          <div class="subtitle">reports in one day</div>
+          <div class="description">{{ wrapped.top_day_date|date:"F j, Y" }}</div>
+        </div>
+        <button class="share-button" onclick="shareSlide(event, 'busiest-day')">Share</button>
+      </div>
+      {% endif %}
+
+      <!-- Slide 6: Top Vehicles (conditional) -->
+      {% if wrapped.top_user_vehicles %}
+      <div class="slide orange" data-slug="vehicles">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content">
+          <h2>Top Reported Vehicles</h2>
+          <ul class="slide-list">
+            {% for item in wrapped.top_user_vehicles %}
+            <li>
+              <span>{{ item.vehicle }}</span>
+              <span class="count">{{ item.count }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+          {% if wrapped.top_community_vehicles %}
+          <div class="community-section">
+            <h3>Community Top 3</h3>
+            <ul class="slide-list" style="font-size: 0.9em; opacity: 0.9;">
+              {% for item in wrapped.top_community_vehicles %}
+              <li>
+                <span>{{ item.vehicle }}</span>
+                <span class="count">{{ item.count }}</span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+        </div>
+        <button class="share-button" onclick="shareSlide(event, 'vehicles')">Share</button>
+      </div>
+      {% endif %}
+
+      <!-- Slide 7: Violations by Type (conditional) -->
+      {% if wrapped.violations_by_type %}
+      <div class="slide blue" data-slug="violations">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content">
+          <h2>Violations by Type</h2>
+          <ul class="slide-list">
+            {% for violation, count in wrapped.violations_by_type.items %}
+            <li>
+              <span>{{ violation }}</span>
+              <span class="count">{{ count }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <button class="share-button" onclick="shareSlide(event, 'violations')">Share</button>
+      </div>
+      {% endif %}
+
+      <!-- Slide 8: Monthly Activity (conditional) -->
+      {% if wrapped.reports_by_month %}
+      <div class="slide highlight" data-slug="monthly">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content">
+          <h2>Reports by Month</h2>
+          <div class="monthly-chart">
+            {% for data in monthly_data %}
+            <div class="month-bar">
+              <div class="count">{% if data.count > 0 %}{{ data.count }}{% endif %}</div>
+              <div class="bar" style="height: {{ data.height }}px;"></div>
+              <div class="label">{{ data.month }}</div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <button class="share-button" onclick="shareSlide(event, 'monthly')">Share</button>
+      </div>
+      {% endif %}
+
+      <!-- Slide 9: Top Streets (conditional) -->
+      {% if wrapped.top_streets %}
+      <div class="slide green" data-slug="streets">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content">
+          <h2>Top Streets</h2>
+          <ul class="slide-list">
+            {% for item in wrapped.top_streets %}
+            <li>
+              <span>{{ item.street }}</span>
+              <span class="count">{{ item.count }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <button class="share-button" onclick="shareSlide(event, 'streets')">Share</button>
+      </div>
+      {% endif %}
+
+      <!-- Final Slide: That's a wrap -->
+      <div class="slide dark" data-slug="wrap">
+        <div class="slide-header">{{ wrapped.user.first_name }}'s Laser Vision Wrapped - {{ wrapped.year }}</div>
+        <div class="slide-content share-content">
+          <h1 style="font-size: clamp(2.5em, 10vw, 5em); margin-bottom: 0.5em;">That's a wrap!</h1>
+          <p class="description">Thanks for being part of the action!</p>
+          <p class="description" style="margin-top: 1em;"><a href="https://bikeaction.org" style="color: white; text-decoration: underline;">bikeaction.org</a></p>
+
+          {% if is_owner %}
+          <h2 style="margin-top: 2em;">Share Your Wrapped</h2>
+          <div class="share-url-container">
+            <input type="text" id="share-url" value="{{ wrapped.get_share_url }}" readonly onclick="this.select()">
+            <button onclick="copyShareUrl()">Copy Link</button>
+          </div>
+
+          <a href="/tools/laser/wrapped/?regenerate=1" class="regenerate-link">Regenerate Stats</a>
+          <p class="last-updated">Last updated: {{ wrapped.updated_at|date:"M j, Y g:i A" }}</p>
+          {% endif %}
+        </div>
+        <p style="position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; font-size: 0.7em; opacity: 0.6; line-height: 1.4; padding: 0 20px;">
+          Royalty Free Music from <a href="https://tunetank.com" style="color: white; text-decoration: underline;">Tunetank.com</a><br>
+          Track: Let's Get it Started by AlexGuz<br>
+          <a href="https://tunetank.com/track/3266-let's-get-it-started/" style="color: white; text-decoration: underline;">tunetank.com/track/3266-let's-get-it-started/</a>
+        </p>
+      </div>
+
     </div>
-  </div>
-  {% endif %}
 
-  {% if wrapped.top_streets %}
-  <div class="stat-card orange">
-    <h2>Top Streets</h2>
-    <ul class="street-list">
-      {% for item in wrapped.top_streets %}
-      <li>
-        <span>{{ item.street }}</span>
-        <span class="count">{{ item.count }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% endif %}
-
-  <div class="share-section">
-    <h3>Share Your Wrapped</h3>
-    <div class="share-url">
-      <input type="text" id="share-url" value="{{ wrapped.get_share_url }}" readonly>
-      <button onclick="copyShareUrl()">Copy Link</button>
-    </div>
+    <!-- Tap zones for desktop -->
+    <div class="tap-zone left" id="tap-zone-left"></div>
+    <div class="tap-zone right" id="tap-zone-right"></div>
   </div>
 
-  {% if not is_owner %}
-  <div class="cta-section">
-    <p>Want to make a difference in {{ wrapped.year|add:1 }}?</p>
-    <a href="/tools/laser-vision/">Start Using Laser Vision</a>
-  </div>
-  {% endif %}
+  <script>
+    let currentSlide = 0;
+    const slidesWrapper = document.getElementById('slides-wrapper');
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBars = document.getElementById('progress-bars');
 
-  {% if is_owner %}
-  <div class="regenerate-section">
-    <a href="/tools/laser/wrapped/?regenerate=1" class="regenerate-btn">Regenerate Stats</a>
-    <p class="last-updated">Last updated: {{ wrapped.updated_at|date:"M j, Y g:i A" }}</p>
-  </div>
-  {% endif %}
-</div>
+    // Create progress bars
+    for (let i = 0; i < totalSlides; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'progress-bar';
+      bar.innerHTML = '<div class="progress-bar-fill"></div>';
+      progressBars.appendChild(bar);
+    }
 
-<script>
-function copyShareUrl() {
-  const input = document.getElementById('share-url');
-  input.select();
-  document.execCommand('copy');
-  const button = event.target;
-  button.textContent = 'Copied!';
-  setTimeout(() => {
-    button.textContent = 'Copy Link';
-  }, 2000);
-}
-</script>
-{% endblock %}
+    const progressBarElements = document.querySelectorAll('.progress-bar');
+    let autoplayTimer = null;
+    let autoplayStartTime = null;
+    let autoplayRemainingTime = 10000;
+    const bgMusic = document.getElementById('bg-music');
+    let musicStarted = false;
+
+    // Function to fade in music volume
+    function fadeInMusic() {
+      let volume = 0;
+      const fadeInterval = setInterval(() => {
+        if (volume < 1) {
+          volume += 0.02; // Increase by 2% each step
+          bgMusic.volume = Math.min(volume, 1);
+        } else {
+          clearInterval(fadeInterval);
+        }
+      }, 40); // Update every 40ms (25 times per second)
+    }
+
+    // Function to try starting music (best effort, may fail on autoplay restrictions)
+    function startMusic() {
+      if (!musicStarted) {
+        musicStarted = true;
+        bgMusic.volume = 0;
+        bgMusic.muted = false;
+        const playPromise = bgMusic.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            muteButton.textContent = '🔊';
+            fadeInMusic();
+          }).catch(err => {
+            // Silently fail - user can manually unmute
+            musicStarted = false;
+          });
+        }
+      }
+    }
+
+    function updateSlide() {
+      slidesWrapper.style.transform = `translateX(-${currentSlide * 100}vw)`;
+
+      // Update progress bars
+      progressBarElements.forEach((bar, index) => {
+        const fill = bar.querySelector('.progress-bar-fill');
+
+        // On first slide, only show first bar as complete
+        if (currentSlide === 0 && index === 0) {
+          bar.classList.remove('active');
+          bar.classList.add('completed');
+          fill.classList.remove('animating');
+          fill.style.transition = 'none';
+          fill.style.width = '100%';
+          fill.offsetHeight;
+          fill.style.transition = '';
+        } else if (currentSlide === 0 && index !== 0) {
+          // On first slide, keep other bars empty
+          bar.classList.remove('active', 'completed');
+          fill.classList.remove('animating');
+          fill.style.transition = 'none';
+          fill.style.width = '0%';
+          fill.offsetHeight;
+          fill.style.transition = '';
+        } else if (currentSlide === totalSlides - 1) {
+          // On last slide, show all bars as complete
+          bar.classList.remove('active');
+          bar.classList.add('completed');
+          fill.classList.remove('animating');
+          fill.style.transition = 'none';
+          fill.style.width = '100%';
+          fill.offsetHeight;
+          fill.style.transition = '';
+        } else if (index < currentSlide) {
+          // Previous slides - fill immediately
+          bar.classList.remove('active');
+          bar.classList.add('completed');
+          fill.classList.remove('animating');
+          fill.style.transition = 'none';
+          fill.style.width = '100%';
+          // Force reflow to ensure style is applied
+          fill.offsetHeight;
+          fill.style.transition = '';
+        } else if (index === currentSlide) {
+          // Current slide - reset and start animation
+          bar.classList.remove('completed');
+          bar.classList.add('active');
+          fill.classList.remove('animating');
+          // Force reset to 0% without transition
+          fill.style.transition = 'none';
+          fill.style.width = '0%';
+          // Force reflow
+          fill.offsetHeight;
+          // Clear inline styles to let CSS take over
+          fill.style.transition = '';
+          fill.style.width = '';
+          // Start progress bar animation after a brief delay
+          setTimeout(() => fill.classList.add('animating'), 50);
+        } else {
+          // Future slides - reset
+          bar.classList.remove('active', 'completed');
+          fill.classList.remove('animating');
+          fill.style.width = '';
+        }
+      });
+
+      // Update URL fragment
+      const currentSlideElement = slides[currentSlide];
+      const slug = currentSlideElement.getAttribute('data-slug');
+      if (slug) {
+        history.replaceState(null, null, '#' + slug);
+      }
+
+      // Reset and start autoplay
+      startAutoplay();
+    }
+
+    function startAutoplay() {
+      // Clear existing timer
+      if (autoplayTimer) {
+        clearTimeout(autoplayTimer);
+      }
+
+      // Don't autoplay on the first or last slide
+      if (currentSlide > 0 && currentSlide < totalSlides - 1) {
+        // Reset to full 10 seconds if we're starting fresh (not resuming)
+        if (autoplayRemainingTime === 10000 || !autoplayStartTime) {
+          autoplayRemainingTime = 10000;
+        }
+        autoplayStartTime = Date.now();
+        autoplayTimer = setTimeout(() => {
+          autoplayRemainingTime = 10000; // Reset for next slide
+          nextSlide();
+        }, autoplayRemainingTime);
+      }
+    }
+
+    function stopAutoplay() {
+      if (autoplayTimer) {
+        clearTimeout(autoplayTimer);
+        autoplayTimer = null;
+      }
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        autoplayRemainingTime = 10000; // Reset timer for next slide
+        currentSlide++;
+        updateSlide();
+      }
+    }
+
+    function previousSlide() {
+      if (currentSlide > 0) {
+        autoplayRemainingTime = 10000; // Reset timer when going back
+        currentSlide--;
+        updateSlide();
+      }
+    }
+
+    // Touch support for swipe and tap
+    let touchStartX = 0;
+    let touchEndX = 0;
+    let touchStartY = 0;
+    let touchEndY = 0;
+    let lastTapTime = 0;
+    let holdTimer = null;
+    let isPaused = false;
+    let wasPlayingBeforePause = false;
+    let pausedProgressWidth = null;
+
+    const storiesContainer = document.querySelector('.stories-container');
+
+    // Helper function to check if element is or is inside a share button or mute button
+    function isShareButton(element) {
+      if (!element) return false;
+      if (element.classList && (element.classList.contains('share-button') || element.classList.contains('mute-button'))) return true;
+      return element.parentElement ? isShareButton(element.parentElement) : false;
+    }
+
+    // Mute button functionality
+    const muteButton = document.getElementById('mute-button');
+    muteButton.addEventListener('click', function(e) {
+      e.stopPropagation();
+
+      // If music hasn't been played yet
+      if (bgMusic.paused) {
+        musicStarted = true;
+        muteButton.textContent = '🔊';
+        bgMusic.volume = 0;
+        bgMusic.muted = false;
+
+        // Play must be called synchronously in the event handler
+        bgMusic.play().then(() => {
+          fadeInMusic();
+        }).catch(err => {
+          muteButton.textContent = '🔇';
+          musicStarted = false;
+        });
+      } else {
+        // Music is already playing, toggle mute
+        if (bgMusic.muted) {
+          bgMusic.muted = false;
+          muteButton.textContent = '🔊';
+        } else {
+          bgMusic.muted = true;
+          muteButton.textContent = '🔇';
+        }
+      }
+    });
+
+    storiesContainer.addEventListener('touchstart', (e) => {
+      // Don't handle if touching share button
+      if (isShareButton(e.target)) {
+        return;
+      }
+
+      // Prevent pinch zoom (multi-touch)
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+      touchStartX = e.changedTouches[0].screenX;
+      touchStartY = e.changedTouches[0].screenY;
+
+      // Start hold timer - pause after 500ms
+      holdTimer = setTimeout(() => {
+        isPaused = true;
+        // Pause slideshow
+        if (autoplayTimer) {
+          const elapsed = Date.now() - autoplayStartTime;
+          autoplayRemainingTime = Math.max(0, autoplayRemainingTime - elapsed);
+          clearTimeout(autoplayTimer);
+          autoplayTimer = null;
+        }
+        // Pause music
+        if (!bgMusic.paused) {
+          bgMusic.pause();
+          wasPlayingBeforePause = true;
+        }
+        // Pause progress bar by capturing current width
+        const currentFill = progressBarElements[currentSlide].querySelector('.progress-bar-fill');
+        if (currentFill) {
+          // Get the current computed width during transition
+          const computedStyle = window.getComputedStyle(currentFill);
+          pausedProgressWidth = computedStyle.width;
+          // Stop transition and freeze at current width
+          currentFill.style.transition = 'none';
+          currentFill.style.width = pausedProgressWidth;
+          currentFill.classList.remove('animating');
+        }
+      }, 500);
+    }, { passive: false });
+
+    storiesContainer.addEventListener('touchmove', (e) => {
+      // Don't handle if touching share button
+      if (isShareButton(e.target)) {
+        return;
+      }
+
+      // Prevent pinch zoom during move
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+
+      // Prevent browser swipe-to-navigate on horizontal swipes
+      const touchX = e.touches[0].clientX;
+      const touchY = e.touches[0].clientY;
+      const diffX = Math.abs(touchX - touchStartX);
+      const diffY = Math.abs(touchY - touchStartY);
+
+      // If horizontal swipe is dominant, prevent browser navigation
+      if (diffX > diffY) {
+        e.preventDefault();
+      }
+    }, { passive: false });
+
+    storiesContainer.addEventListener('touchend', (e) => {
+      // Clear hold timer
+      if (holdTimer) {
+        clearTimeout(holdTimer);
+        holdTimer = null;
+      }
+
+      // If paused, resume
+      if (isPaused) {
+        isPaused = false;
+        // Resume music
+        if (wasPlayingBeforePause) {
+          bgMusic.play().catch(err => console.log('Could not resume music:', err));
+          wasPlayingBeforePause = false;
+        }
+        // Resume progress bar from paused position
+        const currentFill = progressBarElements[currentSlide].querySelector('.progress-bar-fill');
+        if (currentFill && pausedProgressWidth !== null && autoplayRemainingTime > 0) {
+          // Calculate how much time has elapsed vs total
+          const totalTime = 10000;
+          const elapsedTime = totalTime - autoplayRemainingTime;
+          const progressPercent = (elapsedTime / totalTime) * 100;
+
+          // Resume transition from current position
+          currentFill.style.transition = `width ${autoplayRemainingTime}ms linear`;
+          currentFill.style.width = '100%';
+          pausedProgressWidth = null;
+        }
+        // Resume slideshow
+        if (autoplayRemainingTime > 0) {
+          startAutoplay();
+        }
+        return; // Don't process tap/swipe when resuming
+      }
+
+      // Don't handle if touching share button
+      if (isShareButton(e.target)) {
+        return;
+      }
+
+      touchEndX = e.changedTouches[0].screenX;
+      touchEndY = e.changedTouches[0].screenY;
+
+      // Prevent double-tap zoom
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTapTime;
+
+      if (tapLength < 500 && tapLength > 0) {
+        e.preventDefault();
+      }
+      lastTapTime = currentTime;
+
+      handleTouchEnd();
+    }, { passive: false });
+
+    // Prevent iOS gesture events (pinch zoom)
+    document.addEventListener('gesturestart', (e) => {
+      e.preventDefault();
+    });
+
+    document.addEventListener('gesturechange', (e) => {
+      e.preventDefault();
+    });
+
+    document.addEventListener('gestureend', (e) => {
+      e.preventDefault();
+    });
+
+    function handleTouchEnd() {
+      const swipeThreshold = 50;
+      const tapThreshold = 10;
+      const diffX = touchStartX - touchEndX;
+      const diffY = touchStartY - touchEndY;
+
+      // Check if it's a swipe (horizontal movement)
+      if (Math.abs(diffX) > swipeThreshold && Math.abs(diffY) < Math.abs(diffX)) {
+        if (diffX > 0) {
+          nextSlide(); // Swipe left = next
+        } else {
+          previousSlide(); // Swipe right = previous
+        }
+      }
+      // Check if it's a tap (minimal movement)
+      else if (Math.abs(diffX) < tapThreshold && Math.abs(diffY) < tapThreshold) {
+        const screenWidth = window.innerWidth;
+        const tapX = touchEndX;
+
+        // Left third = previous, right two-thirds = next
+        if (tapX < screenWidth * 0.33) {
+          previousSlide();
+        } else {
+          nextSlide();
+        }
+      }
+    }
+
+    // Desktop click support (tap zones)
+    // Only add click listeners if not a touch device
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    if (!isTouchDevice) {
+      document.getElementById('tap-zone-left').addEventListener('click', (e) => {
+        if (!isShareButton(e.target)) {
+          previousSlide();
+        }
+      });
+      document.getElementById('tap-zone-right').addEventListener('click', (e) => {
+        if (!isShareButton(e.target)) {
+          nextSlide();
+        }
+      });
+    }
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        nextSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        previousSlide();
+      } else if (e.key === 'Escape') {
+        window.location.href = '/';
+      }
+    });
+
+    // Copy URL function
+    function copyShareUrl() {
+      const input = document.getElementById('share-url');
+      input.select();
+      input.setSelectionRange(0, 99999); // For mobile
+
+      try {
+        document.execCommand('copy');
+        const button = event.target;
+        button.textContent = 'Copied!';
+        setTimeout(() => {
+          button.textContent = 'Copy Link';
+        }, 2000);
+      } catch (err) {
+        console.error('Failed to copy:', err);
+      }
+    }
+
+    // Share slide function
+    async function shareSlide(event, slug) {
+      event.stopPropagation(); // Prevent tap zone from triggering
+
+      const url = window.location.origin + window.location.pathname + '#' + slug;
+      const button = event.target;
+      const originalText = button.textContent;
+
+      // Show loading state
+      button.textContent = 'Preparing...';
+
+      // Get slide name for share text
+      const slideNames = {
+        'intro': 'Laser Vision Wrapped {{ wrapped.year }}',
+        'total-reports': 'Total Reports',
+        'ranking': 'Community Ranking',
+        'streak': 'Longest Streak',
+        'busiest-day': 'Busiest Day',
+        'vehicles': 'Top Vehicles',
+        'violations': 'Violations by Type',
+        'monthly': 'Monthly Activity',
+        'streets': 'Top Streets',
+        'wrap': 'Wrapped'
+      };
+
+      try {
+        // Get the current slide element
+        const currentSlideElement = slides[currentSlide];
+
+        // Temporarily hide UI elements to not include them in the screenshot
+        button.style.display = 'none';
+        muteButton.style.display = 'none';
+        progressBars.style.display = 'none';
+
+        // Capture the slide as an image
+        const canvas = await html2canvas(currentSlideElement, {
+          backgroundColor: null,
+          scale: 2, // Higher quality for retina displays
+          logging: false,
+          width: window.innerWidth,
+          height: window.innerHeight
+        });
+
+        // Show the UI elements again
+        button.style.display = '';
+        muteButton.style.display = '';
+        progressBars.style.display = '';
+
+        // Convert canvas to blob
+        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+        // Create file from blob
+        const file = new File([blob], `laser-vision-wrapped-${slug}.png`, { type: 'image/png' });
+
+        const shareData = {
+          title: `{{ wrapped.user.first_name }}'s Laser Vision Wrapped {{ wrapped.year }}`,
+          text: `Check out my ${slideNames[slug] || 'stats'} from Laser Vision! ${url}`,
+          files: [file]
+        };
+
+        // Check if browser supports sharing files
+        if (navigator.canShare && navigator.canShare(shareData)) {
+          await navigator.share(shareData);
+          button.textContent = 'Shared!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove('copied');
+          }, 2000);
+        } else if (navigator.share) {
+          // Fallback to sharing just URL if files not supported
+          await navigator.share({
+            title: shareData.title,
+            text: shareData.text,
+            url: url
+          });
+          button.textContent = 'Shared!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove('copied');
+          }, 2000);
+        } else {
+          // Download image as fallback for desktop
+          const link = document.createElement('a');
+          link.download = `laser-vision-wrapped-${slug}.png`;
+          link.href = canvas.toDataURL();
+          link.click();
+          button.textContent = 'Downloaded!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove('copied');
+          }, 2000);
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          // User cancelled
+          button.textContent = originalText;
+        } else {
+          console.error('Failed to share:', err);
+          // Fallback to copying URL
+          button.textContent = originalText;
+          copyToClipboard(url, button, originalText);
+        }
+      }
+    }
+
+    // Helper function to copy URL to clipboard
+    function copyToClipboard(url, button, originalText) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          button.textContent = 'Copied!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove('copied');
+          }, 2000);
+        }).catch(err => {
+          console.error('Failed to copy:', err);
+        });
+      } else {
+        // Fallback for older browsers
+        const tempInput = document.createElement('input');
+        tempInput.value = url;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        tempInput.setSelectionRange(0, 99999);
+
+        try {
+          document.execCommand('copy');
+          button.textContent = 'Copied!';
+          button.classList.add('copied');
+          setTimeout(() => {
+            button.textContent = originalText;
+            button.classList.remove('copied');
+          }, 2000);
+        } catch (err) {
+          console.error('Failed to copy:', err);
+        }
+
+        document.body.removeChild(tempInput);
+      }
+    }
+
+    // Initialize and check for hash on load
+    function initializeSlides() {
+      // Check if there's a hash in the URL
+      const hash = window.location.hash.substring(1); // Remove the #
+      if (hash) {
+        // Find the slide with the matching slug
+        const targetSlide = Array.from(slides).findIndex(slide =>
+          slide.getAttribute('data-slug') === hash
+        );
+        if (targetSlide !== -1) {
+          currentSlide = targetSlide;
+        }
+      }
+      updateSlide();
+    }
+
+    // Initialize
+    initializeSlides();
+
+    // Pause music and slideshow when page is hidden (background/tab switch)
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        // Page is hidden - pause everything and save remaining time
+        if (!bgMusic.paused) {
+          bgMusic.pause();
+        }
+        if (autoplayTimer) {
+          // Calculate how much time is remaining
+          const elapsed = Date.now() - autoplayStartTime;
+          autoplayRemainingTime = Math.max(0, autoplayRemainingTime - elapsed);
+          clearTimeout(autoplayTimer);
+          autoplayTimer = null;
+        }
+      } else {
+        // Page is visible again - resume with remaining time
+        if (musicStarted && bgMusic.paused) {
+          bgMusic.play().catch(err => console.log('Could not resume music:', err));
+        }
+        // Resume autoplay with remaining time
+        if (autoplayRemainingTime > 0) {
+          startAutoplay();
+        }
+      }
+    });
+  </script>
+</body>
+</html>
