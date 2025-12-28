@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}No Laser Vision Data{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 4em 2em;">
+  <h1>No Reports Found</h1>
+  <p>You don't have any Laser Vision reports for {{ year }}.</p>
+  <p style="margin-top: 2em;">
+    <a href="/tools/laser-vision/" style="display: inline-block; padding: 15px 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 30px; font-weight: bold;">
+      Start Using Laser Vision
+    </a>
+  </p>
+</div>
+{% endblock %}

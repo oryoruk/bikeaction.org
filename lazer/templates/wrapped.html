@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ wrapped.user.first_name }}'s {{ wrapped.year }} Laser Vision Wrapped{% endblock %}
+
+{% block description %}{{ wrapped.user.first_name }} reported {{ wrapped.total_reports }} parking violations in {{ wrapped.year }} using Laser Vision!{% endblock %}
+
+{% block og_title %}{{ wrapped.user.first_name }}'s {{ wrapped.year }} Laser Vision Wrapped{% endblock %}
+{% block og_description %}{{ wrapped.user.first_name }} reported {{ wrapped.total_reports }} parking violations in {{ wrapped.year }} using Laser Vision!{% endblock %}
+
+{% block extra_head %}
+<style>
+  .wrapped-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  .wrapped-header {
+    text-align: center;
+    margin-bottom: 2em;
+  }
+
+  .wrapped-header h1 {
+    font-size: 2.5em;
+    margin-bottom: 0.2em;
+    background: linear-gradient(135deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .wrapped-header .year {
+    font-size: 3em;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .wrapped-header .subtitle {
+    color: #666;
+    font-size: 1.2em;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  }
+
+  .stat-card.highlight {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+
+  .stat-card.green {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  }
+
+  .stat-card.orange {
+    background: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
+  }
+
+  .stat-card.blue {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+
+  .stat-card h2 {
+    font-size: 1em;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    opacity: 0.9;
+  }
+
+  .stat-card .big-number {
+    font-size: 4em;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .stat-card .description {
+    font-size: 1.1em;
+    opacity: 0.9;
+  }
+
+  .violation-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .violation-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+  }
+
+  .violation-list li:last-child {
+    border-bottom: none;
+  }
+
+  .violation-list .count {
+    font-weight: bold;
+  }
+
+  .street-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .street-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+
+  .monthly-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    height: 120px;
+    padding-top: 20px;
+  }
+
+  .month-bar {
+    flex: 1;
+    margin: 0 2px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .month-bar .bar {
+    width: 100%;
+    background: rgba(255,255,255,0.8);
+    border-radius: 4px 4px 0 0;
+    min-height: 4px;
+  }
+
+  .month-bar .label {
+    font-size: 0.7em;
+    margin-top: 4px;
+    opacity: 0.8;
+  }
+
+  .month-bar .count {
+    font-size: 0.65em;
+    font-weight: bold;
+    margin-bottom: 2px;
+  }
+
+  .share-section {
+    text-align: center;
+    margin-top: 2em;
+    padding: 20px;
+    background: #f5f5f5;
+    border-radius: 12px;
+  }
+
+  .share-section h3 {
+    margin-bottom: 1em;
+  }
+
+  .share-url {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .share-url input {
+    flex: 1;
+    min-width: 200px;
+    max-width: 400px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9em;
+  }
+
+  .share-url button {
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+
+  .share-url button:hover {
+    background: #5a6fd6;
+  }
+
+  .first-report {
+    text-align: center;
+    font-style: italic;
+    opacity: 0.9;
+    margin-top: 10px;
+  }
+
+  .percent-contribution {
+    font-size: 1.1em;
+    font-weight: bold;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 8px;
+  }
+
+  .percentile-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.9em;
+    margin-top: 10px;
+  }
+
+  .percentile-badge.top-10 {
+    background: rgba(255, 215, 0, 0.3);
+    color: #fff;
+  }
+
+  .percentile-badge.top-25 {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+
+  .comparison {
+    margin-top: 10px;
+    font-size: 0.9em;
+    opacity: 0.8;
+  }
+
+  .cta-section {
+    text-align: center;
+    margin-top: 2em;
+    padding: 20px;
+  }
+
+  .cta-section a {
+    display: inline-block;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+    font-weight: bold;
+    font-size: 1.1em;
+  }
+
+  .cta-section a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+
+  .regenerate-section {
+    text-align: center;
+    margin-top: 2em;
+    padding: 20px;
+    border-top: 1px solid #eee;
+  }
+
+  .regenerate-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #f5f5f5;
+    color: #666;
+    text-decoration: none;
+    border-radius: 20px;
+    font-size: 0.9em;
+  }
+
+  .regenerate-btn:hover {
+    background: #e5e5e5;
+  }
+
+  .last-updated {
+    font-size: 0.8em;
+    color: #999;
+    margin-top: 10px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="wrapped-container">
+  <div class="wrapped-header">
+    <h1>Laser Vision</h1>
+    <div class="year">{{ wrapped.year }} Wrapped</div>
+    <div class="subtitle">{{ wrapped.user.first_name }}'s Year in Review</div>
+  </div>
+
+  <div class="stat-card highlight">
+    <h2>Total Reports Filed</h2>
+    <div class="big-number">{{ wrapped.total_reports }}</div>
+    <div class="description">parking violations reported to the Philadelphia Parking Authority</div>
+    {% if wrapped.percent_of_total and wrapped.percent_of_total > 0.1 %}
+    <div class="percent-contribution">That's {{ wrapped.percent_of_total }}% of the {{ wrapped.total_community_reports }} Laser Vision reports in {{ wrapped.year }}!</div>
+    {% endif %}
+    {% if wrapped.first_report_date %}
+    <div class="first-report">First report: {{ wrapped.first_report_date }}</div>
+    {% endif %}
+  </div>
+
+  {% if wrapped.rank and wrapped.percentile >= 50 %}
+  <div class="stat-card green">
+    <h2>Community Ranking</h2>
+    <div class="big-number">#{{ wrapped.rank }}</div>
+    <div class="description">out of {{ wrapped.total_users }} Laser Vision users in {{ wrapped.year }}</div>
+    {% if top_percent and top_percent <= 10 %}
+    <div class="percentile-badge top-10">Top {{ top_percent }}%</div>
+    {% elif top_percent and top_percent <= 25 %}
+    <div class="percentile-badge top-25">Top {{ top_percent }}%</div>
+    {% endif %}
+    <div class="comparison">Average user: {{ wrapped.avg_reports }} reports</div>
+  </div>
+  {% endif %}
+
+  {% if wrapped.longest_streak > 1 %}
+  <div class="stat-card orange">
+    <h2>Longest Streak</h2>
+    <div class="big-number">{{ wrapped.longest_streak }} days</div>
+    <div class="description">{{ wrapped.longest_streak_reports }} reports from {{ wrapped.longest_streak_start|date:"M j" }} to {{ wrapped.longest_streak_end|date:"M j" }}</div>
+  </div>
+  {% endif %}
+
+  {% if wrapped.top_day_count > 1 %}
+  <div class="stat-card blue">
+    <h2>Busiest Day</h2>
+    <div class="big-number">{{ wrapped.top_day_count }}</div>
+    <div class="description">reports on {{ wrapped.top_day_date|date:"F j, Y" }}</div>
+  </div>
+  {% endif %}
+
+  {% if wrapped.violations_by_type %}
+  <div class="stat-card">
+    <h2>Violations by Type</h2>
+    <ul class="violation-list">
+      {% for violation, count in wrapped.violations_by_type.items %}
+      <li>
+        <span>{{ violation }}</span>
+        <span class="count">{{ count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if wrapped.reports_by_month %}
+  <div class="stat-card">
+    <h2>Reports by Month</h2>
+    <div class="monthly-chart">
+      {% for data in monthly_data %}
+      <div class="month-bar">
+        <div class="bar" style="height: {{ data.height }}px;"></div>
+        <div class="label">{{ data.month }}</div>
+        {% if data.count > 0 %}<div class="count">{{ data.count }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if wrapped.top_streets %}
+  <div class="stat-card orange">
+    <h2>Top Streets</h2>
+    <ul class="street-list">
+      {% for item in wrapped.top_streets %}
+      <li>
+        <span>{{ item.street }}</span>
+        <span class="count">{{ item.count }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <div class="share-section">
+    <h3>Share Your Wrapped</h3>
+    <div class="share-url">
+      <input type="text" id="share-url" value="{{ wrapped.get_share_url }}" readonly>
+      <button onclick="copyShareUrl()">Copy Link</button>
+    </div>
+  </div>
+
+  {% if not is_owner %}
+  <div class="cta-section">
+    <p>Want to make a difference in {{ wrapped.year|add:1 }}?</p>
+    <a href="/tools/laser-vision/">Start Using Laser Vision</a>
+  </div>
+  {% endif %}
+
+  {% if is_owner %}
+  <div class="regenerate-section">
+    <a href="/tools/laser/wrapped/?regenerate=1" class="regenerate-btn">Regenerate Stats</a>
+    <p class="last-updated">Last updated: {{ wrapped.updated_at|date:"M j, Y g:i A" }}</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function copyShareUrl() {
+  const input = document.getElementById('share-url');
+  input.select();
+  document.execCommand('copy');
+  const button = event.target;
+  button.textContent = 'Copied!';
+  setTimeout(() => {
+    button.textContent = 'Copy Link';
+  }, 2000);
+}
+</script>
+{% endblock %}

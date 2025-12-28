@@ -1,3 +1,4 @@
+import secrets
 import uuid
 
 from django.contrib.auth import get_user_model
@@ -5,6 +6,10 @@ from django.contrib.gis.db import models
 from django.utils.safestring import mark_safe
 
 User = get_user_model()
+
+
+def generate_share_token():
+    return secrets.token_urlsafe(32)
 
 
 class ViolationSubmission(models.Model):
@@ -119,3 +124,55 @@ class ViolationReport(models.Model):
             '<a href="%s"><img src="%s" style="max-height: 50px;"/></a>'
             % (self.screenshot_final.url, self.screenshot_final.url)
         )
+
+
+class LazerWrapped(models.Model):
+    """Shareable year-in-review statistics for Laser Vision users."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="lazer_wrapped")
+    share_token = models.CharField(
+        max_length=64, unique=True, db_index=True, default=generate_share_token
+    )
+
+    # Date range for the wrapped report
+    year = models.IntegerField()
+
+    # Cached statistics
+    total_submissions = models.IntegerField(default=0)
+    total_reports = models.IntegerField(default=0)
+    violations_by_type = models.JSONField(default=dict)
+    top_streets = models.JSONField(default=list)
+    top_zip_codes = models.JSONField(default=list)
+    reports_by_month = models.JSONField(default=dict)
+    first_report_date = models.DateField(null=True, blank=True)
+    longest_streak = models.IntegerField(default=0)
+    longest_streak_start = models.DateField(null=True, blank=True)
+    longest_streak_end = models.DateField(null=True, blank=True)
+    longest_streak_reports = models.IntegerField(default=0)
+    top_day_date = models.DateField(null=True, blank=True)
+    top_day_count = models.IntegerField(default=0)
+
+    # Community comparison stats
+    rank = models.IntegerField(null=True, blank=True)
+    total_users = models.IntegerField(null=True, blank=True)
+    percentile = models.IntegerField(null=True, blank=True)
+    avg_reports = models.FloatField(null=True, blank=True)
+    total_community_reports = models.IntegerField(null=True, blank=True)
+    percent_of_total = models.FloatField(null=True, blank=True)
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-year", "-created_at"]
+        unique_together = ["user", "year"]
+
+    def __str__(self):
+        return f"{self.user.email} - {self.year} Wrapped"
+
+    def get_share_url(self):
+        from django.conf import settings
+
+        return f"{settings.SITE_URL}/tools/laser/wrapped/{self.share_token}/"

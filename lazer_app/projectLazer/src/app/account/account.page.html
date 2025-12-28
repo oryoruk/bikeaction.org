@@ -36,6 +36,18 @@
       <ion-col>Logged in as</ion-col>
       <ion-col>{{ accountService.username }}</ion-col>
     </ion-row>
+    <ion-row *ngIf="accountService.loggedIn && accountService.wrappedUrl">
+      <ion-col colspan="2">
+        <ion-button
+          expand="block"
+          [href]="accountService.wrappedUrl"
+          target="_blank"
+        >
+          <ion-icon name="sparkles" slot="start"></ion-icon>
+          View Your 2025 Wrapped
+        </ion-button>
+      </ion-col>
+    </ion-row>
     <ion-row *ngIf="accountService.loggedIn">
       <ion-col colspan="2">
         <ion-button (click)="accountService.logOut()">Log Out</ion-button>

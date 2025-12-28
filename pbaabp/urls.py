@@ -20,6 +20,8 @@ from events.sitemap import ScheduledEventSitemap
 # from lazer.views import list as laser_list
 from lazer.views import map as laser_map
 from lazer.views import map_data as laser_map_data
+from lazer.views import my_wrapped as laser_my_wrapped
+from lazer.views import wrapped as laser_wrapped
 from pbaabp.admin import organizer_admin
 from pbaabp.views import (
     EmailLoginView,
@@ -68,6 +70,8 @@ urlpatterns = [
     path("tools/laser/map/", laser_map),
     path("tools/laser/map_data/", laser_map_data),
     # path("tools/laser/list/", laser_list),
+    path("tools/laser/wrapped/", laser_my_wrapped, name="laser_my_wrapped"),
+    path("tools/laser/wrapped/<str:share_token>/", laser_wrapped, name="laser_wrapped"),
     path("", include("pages.urls")),
     path("admin/", admin.site.urls),
     path("organizer/", organizer_admin.urls),
