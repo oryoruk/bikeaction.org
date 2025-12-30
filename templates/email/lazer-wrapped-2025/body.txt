@@ -1,0 +1,30 @@
+Hello {{first_name}},
+
+<i><small>You are receiving this email because you used <a href="https://bikeaction.org/tools/laser-vision/">Laser Vision</a> in 2025\!</small></i>
+
+<div style="text-align: center; width: 100%"><a class="submit-button" href="{{wrapped_url}}">Laser Vision Wrapped</a></div>
+
+Thanks for being a Laser Vision user in 2025\! Since launch in June, we have had
+
+* 17,542 reports
+* 1,043 different reporters
+
+That’s
+
+* 6,355 obstructed bike lanes
+* 5,012 cars parked on sidewalks
+* 2,869 crosswalks blocked
+* 2,548 corners with impaired visibility
+* 758 handicap ramps not usable by our community.
+
+The Philadelphia Parking Authority is receiving these submissions and values them enough that they recently created a fully custom API for Laser Vision reports to be submitted into their systems\! This also enables PBA to obtain the tracking ID for the report, which opens the possibility for us to track what PPA does with reports. More soon in 2026\!
+
+As we close out the year, we are happy to share a couple more updates\!
+
+* Our \#1 user complaint is now fixed\! After the next time you login to Laser Vision, that session will be good for ONE YEAR instead of 30 days.  
+* View your year end summary\!\! Your submissions make Laser Vision what it is\! Take some time to look back on your activity with Laser Vision Wrapped\!
+
+<div style="text-align: center; width: 100%"><a class="submit-button" href="{{wrapped_url}}">Laser Vision Wrapped</a></div>
+
+
+**Philly Bike Action**
