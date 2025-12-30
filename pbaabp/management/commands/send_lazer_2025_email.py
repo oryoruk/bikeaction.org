@@ -53,8 +53,7 @@ class Command(BaseCommand):
                 # Build sesame login URL with redirect to wrapped page
                 wrapped_path = f"/tools/laser/wrapped/{wrapped.share_token}/"
                 login_url = reverse("sesame_login")
-                login_url = f"http://localhost:8000{login_url}"
-                # login_url = f"https://bikeaction.org{login_url}"
+                login_url = f"https://bikeaction.org{login_url}"
                 login_url += sesame.utils.get_query_string(user)
                 login_url += f"&next={wrapped_path}"
 
