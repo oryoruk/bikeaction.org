@@ -1072,7 +1072,7 @@ class OrganizerProfileAdmin(ProfileAdmin):
     ]
 
     def has_module_permission(self, request):
-        if request.user:
+        if request.user.is_authenticated:
             return request.user.profile.is_organizer
         return False
 
@@ -1109,7 +1109,7 @@ class OrganizerUserAdmin(UserAdmin):
     list_display = ["first_name", "last_name"]
 
     def has_module_permission(self, request):
-        if request.user:
+        if request.user.is_authenticated:
             return request.user.profile.is_organizer
         return False
 
