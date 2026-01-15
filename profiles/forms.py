@@ -26,7 +26,9 @@ class PronounsWidget(forms.TextInput):
           <option value="she/her">
           <option value="he/him">
           <option value="they/them">
-          <option value="any pronouns">
+          <option value="she/they">
+          <option value="he/they">
+          <option value="any">
         </datalist>
         '''
         return mark_safe(text_input + datalist)
