@@ -1,0 +1,10 @@
+{% load wagtailuserbar %}
+{% load wagtailcore_tags %}
+
+<details class="collapsible-heading-marker">
+    <summary>
+        <i class="fa-solid fa-angle-right collapsible-heading-icon"></i>
+        <{{value.title_header}} class="collapsible-heading">{{ value.title }}</{{value.title_header}}>
+    </summary>
+    {% include_block value.body %}
+</details>

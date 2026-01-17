@@ -1775,6 +1775,37 @@ body {
   gap: 0.4rem;
 }
 
+/* Sole purpose of putting the header in line with the carat icon */
+.collapsible-heading{
+  display: inline-block;
+}
+
+/* Centers the carat icon with the header. It's a bit cleaner visually */
+.collapsible-heading-marker summary{
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Blank to remove the default carat icon in favor of a custom icon listed in the html file */
+.collapsible-heading-marker summary::marker {
+    content: "";
+}
+
+/* Default parameters, 0deg so that it returns back to its normal state */
+.collapsible-heading-icon{
+    color: #D8107DFF;
+    transition: transform 0.15s ease-in-out;
+    transform: rotate(0deg);
+}
+
+/* When it opens rotate */
+.collapsible-heading-marker[open] .collapsible-heading-icon {
+  transition: transform 0.15s ease-in-out;
+  transform: rotate(90deg);
+}
+
+
 .tag-filter-link {
   display: inline-block;
   padding: 0.2rem 0.6rem;
