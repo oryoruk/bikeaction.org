@@ -5,58 +5,76 @@ import os
 import urllib.parse
 from io import BytesIO
 
+import cv2
 import interactions
+import numpy as np
 import requests
 from django.conf import settings
 from django.utils import timezone
 from PIL import Image, ImageDraw
 
 
-def redact_license_plates(image_file, plate_recognizer_response):
+def detect_faces(image_bytes):
     """
-    Draw black rectangles over detected license plate bounding boxes.
-
-    Args:
-        image_file: Django ImageField or file-like object
-        plate_recognizer_response: JSON response from Plate Recognizer API
+    Detect faces in an image using OpenCV Haar cascades.
 
     Returns:
-        BytesIO with redacted image, or None if no plates to redact
+        List of dicts with xmin, ymin, xmax, ymax keys
     """
-    if not plate_recognizer_response:
-        return None
+    nparr = np.frombuffer(image_bytes, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    if img is None:
+        return []
 
-    results = plate_recognizer_response.get("results", [])
-    if not results:
-        return None
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    face_cascade = cv2.CascadeClassifier(
+        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+    )
+    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
 
-    plate_boxes = []
-    for result in results:
-        if result.get("plate") and result["plate"].get("box"):
-            plate_boxes.append(result["plate"]["box"])
+    return [
+        {"xmin": int(x), "ymin": int(y), "xmax": int(x + w), "ymax": int(y + h)}
+        for (x, y, w, h) in faces
+    ]
 
-    if not plate_boxes:
-        return None
 
+def redact_image(image_file, plate_recognizer_response):
+    """
+    Redact license plates and faces from an image.
+
+    Returns:
+        BytesIO with redacted image, or None if nothing to redact
+    """
     image_file.seek(0)
-    image = Image.open(image_file)
+    image_bytes = image_file.read()
 
+    boxes = []
+
+    if plate_recognizer_response:
+        for result in plate_recognizer_response.get("results", []):
+            if result.get("plate") and result["plate"].get("box"):
+                boxes.append(result["plate"]["box"])
+
+    face_boxes = detect_faces(image_bytes)
+    boxes.extend(face_boxes)
+
+    if not boxes:
+        return None
+
+    image = Image.open(BytesIO(image_bytes))
     if image.mode in ("RGBA", "P"):
         image = image.convert("RGB")
 
     draw = ImageDraw.Draw(image)
-
-    for box in plate_boxes:
+    for box in boxes:
         draw.rectangle(
             [box["xmin"], box["ymin"], box["xmax"], box["ymax"]],
             fill="black",
         )
 
     output = BytesIO()
-    image_format = image.format or "JPEG"
-    image.save(output, format=image_format)
+    image.save(output, format=image.format or "JPEG")
     output.seek(0)
-
     return output
 
 
@@ -86,8 +104,7 @@ def submit_violation_report_to_ppa(violation_report):
     content_type = mimetypes.guess_type(image_name)[0] or "image/jpeg"
 
     plate_recognizer_response = violation_report.submission.plate_recognizer_response
-    logging.info(f"Plate recognizer response: {plate_recognizer_response is not None}")
-    redacted_image = redact_license_plates(image, plate_recognizer_response)
+    redacted_image = redact_image(image, plate_recognizer_response)
 
     if redacted_image:
         from django.core.files.base import ContentFile
@@ -98,11 +115,9 @@ def submit_violation_report_to_ppa(violation_report):
             ContentFile(redacted_image.read()),
             save=True,
         )
-        logging.info("Redacted image saved to ViolationReport")
 
         redacted_image.seek(0)
         image_content = base64.b64encode(redacted_image.read()).decode("utf-8")
-        logging.info("License plates redacted from image before PPA submission")
     else:
         image.seek(0)
         image_content = base64.b64encode(image.read()).decode("utf-8")
