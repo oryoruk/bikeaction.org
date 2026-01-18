@@ -225,8 +225,7 @@ class CollapsibleHeader(StructBlock):
             ("table", TableBlock(table_options=table_options)),
             ("display_card_block", DisplayCardsBlock())
         ],
-        use_json_field=True,
-        required=False
+        use_json_field=True
     )
 
     class Meta:
