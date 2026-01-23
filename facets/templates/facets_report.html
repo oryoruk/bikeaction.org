@@ -29,4 +29,15 @@
 </table>
 </div>
 
+<h2>Wards</h2>
+
+<div class="table-container">
+<table>
+  <tr><th>Ward</th><th>Count</th></tr>
+{% for ward in wards %}
+  <tr><td>{{ ward }}</td><td>{{ ward.contained_profiles__count|default:0 }}</td></tr>
+{% endfor %}
+</table>
+</div>
+
 {% endblock %}

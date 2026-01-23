@@ -74,3 +74,7 @@ class StateHouseDistrict(Facet):
 
 class StateSenateDistrict(Facet):
     pass
+
+
+class Ward(Facet):
+    pass

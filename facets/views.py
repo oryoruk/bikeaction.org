@@ -14,7 +14,7 @@ from django.utils.html import mark_safe
 from email_log.models import Email
 from shapely.geometry import Point, shape
 
-from facets.models import District, RegisteredCommunityOrganization
+from facets.models import District, RegisteredCommunityOrganization, Ward
 from facets.utils import geocode_address
 from profiles.models import Profile
 
@@ -111,7 +111,10 @@ async def query_address(request):
 def report(request):
     districts = District.objects.annotate(Count("contained_profiles"))
     rcos = RegisteredCommunityOrganization.objects.annotate(Count("contained_profiles"))
-    context = {"districts": districts, "rcos": rcos}
+    wards = Ward.objects.annotate(Count("contained_profiles")).order_by(
+        "-contained_profiles__count"
+    )
+    context = {"districts": districts, "rcos": rcos, "wards": wards}
     return render(request, "facets_report.html", context=context)
 
 
