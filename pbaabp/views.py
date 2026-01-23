@@ -1,19 +1,26 @@
 import base64
 import json
+import os
 
 import sesame.utils
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, SuspiciousOperation
-from django.http import Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import FormView
 from wagtail.models import Site
 
-from pbaabp.email import send_email_message
-from pbaabp.forms import EmailLoginForm, NewsletterSignupForm
+from pbaabp.email import (
+    EMAIL_IMAGE_PATH,
+    render_email_html,
+    send_email_message,
+    template_from_string,
+)
+from pbaabp.forms import EmailDraftForm, EmailLoginForm, NewsletterSignupForm
 from pbaabp.tasks import subscribe_to_newsletter
 from profiles.tasks import add_mailjet_subscriber, unsubscribe_mailjet_email
 
@@ -142,3 +149,69 @@ def wagtail_pages(request):
     )
 
     return render(request, "wagtail_pages.html", {"pages": pages})
+
+
+EMAIL_PREVIEW_CONTEXT = {
+    "first_name": "Sam",
+    "last_name": "Cyclist",
+    "name": "Sam Cyclist",
+    "email": "sam@example.com",
+}
+
+
+@login_required
+def email_draft(request):
+    form = EmailDraftForm()
+    return render(
+        request,
+        "email_draft.html",
+        {
+            "form": form,
+            "preview_context": EMAIL_PREVIEW_CONTEXT,
+        },
+    )
+
+
+@login_required
+def email_draft_preview(request):
+    subject = request.POST.get("subject", "")
+    body = request.POST.get("body", "")
+
+    if hasattr(settings, "EMAIL_SUBJECT_PREFIX") and subject:
+        subject = f"{settings.EMAIL_SUBJECT_PREFIX} {subject}"
+
+    preview_html = ""
+    if body:
+        try:
+            rendered_body = template_from_string(body).render(EMAIL_PREVIEW_CONTEXT)
+        except Exception:
+            rendered_body = body
+        preview_html = render_email_html(rendered_body, for_preview=True)
+
+    return render(
+        request,
+        "email_draft_preview.html",
+        {
+            "preview_subject": subject,
+            "preview_html": preview_html,
+        },
+    )
+
+
+@login_required
+def email_draft_image(request, filename):
+    allowed_files = {
+        "header-img.png",
+        "footer-img.png",
+        "twitter-logo-24.png",
+        "instagram-logo-24.png",
+        "discord-logo-24.png",
+    }
+    if filename not in allowed_files:
+        raise Http404()
+
+    image_path = os.path.join(settings.BASE_DIR, EMAIL_IMAGE_PATH, filename)
+    if not os.path.exists(image_path):
+        raise Http404()
+
+    return FileResponse(open(image_path, "rb"), content_type="image/png")

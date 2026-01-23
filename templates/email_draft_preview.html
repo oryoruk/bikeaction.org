@@ -1,0 +1,11 @@
+{% load i18n %}
+{% if preview_subject %}
+<p><strong>{% translate "Subject:" %}</strong> {{ preview_subject }}</p>
+{% endif %}
+{% if preview_html %}
+<div style="border: 1px solid #ccc; background-color: white;">
+  {{ preview_html|safe }}
+</div>
+{% else %}
+<p style="color: #666; font-style: italic;">{% translate "Enter subject and body to see preview" %}</p>
+{% endif %}

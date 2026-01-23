@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}Email Draft{% endblock %}
+{% block content %}
+<div class="form-header">
+  <h1>{% translate "Email Draft" %}</h1>
+</div>
+
+<details style="margin: 1rem; padding: 1rem; background-color: #f5f5f5; border-radius: 8px;">
+  <summary style="cursor: pointer; font-weight: bold; font-size: 1.1rem;">{% translate "Syntax Guide" %}</summary>
+
+  <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1rem;">
+    <div style="flex: 1; min-width: 250px;">
+      <h4>{% translate "Markdown" %}</h4>
+      <ul style="margin: 0; padding-left: 1.5rem;">
+        <li><code>**bold**</code> &rarr; <strong>bold</strong></li>
+        <li><code>*italic*</code> &rarr; <em>italic</em></li>
+        <li><code>[link text](https://example.com)</code></li>
+        <li><code>* item</code> for bullet lists</li>
+        <li><code>1. item</code> for numbered lists</li>
+        <li>Blank line between paragraphs</li>
+      </ul>
+    </div>
+
+    <div style="flex: 1; min-width: 250px;">
+      <h4>{% translate "HTML" %}</h4>
+      <p style="margin: 0;">HTML tags work directly:</p>
+      <ul style="margin: 0; padding-left: 1.5rem;">
+        <li><code>&lt;small&gt;</code>, <code>&lt;i&gt;</code>, <code>&lt;b&gt;</code></li>
+        <li><code>&lt;img src="..."&gt;</code></li>
+        <li><code>&lt;div style="..."&gt;</code></li>
+      </ul>
+    </div>
+
+    <div style="flex: 1; min-width: 250px;">
+      <h4>{% translate "Template Variables" %}</h4>
+      <p style="margin: 0;">Django template syntax:</p>
+      <ul style="margin: 0; padding-left: 1.5rem;">
+        {% for key, value in preview_context.items %}
+        <li><code>{% templatetag openvariable %} {{ key }} {% templatetag closevariable %}</code> &rarr; "{{ value }}"</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</details>
+
+<details style="margin: 1rem; padding: 1rem; background-color: #fff8e6; border-radius: 8px;">
+  <summary style="cursor: pointer; font-weight: bold; font-size: 1.1rem;">{% translate "Notes" %}</summary>
+
+  <ul style="margin-top: 1rem; margin-bottom: 0;">
+    <li>Remember to start with <code>Hello/Hi/Dear {% templatetag openvariable %} first_name {% templatetag closevariable %},</code></li>
+    <li>Remember to include a reason for the email in <code>&lt;small&gt;&lt;i&gt;...&lt;/i&gt;&lt;/small&gt;</code></li>
+    <li>Remember to sign-off with <code>**Philly Bike Action**</code></li>
+  </ul>
+</details>
+
+<div style="display: flex; gap: 2rem; flex-wrap: wrap; margin: 1rem;">
+  <div style="flex: 1; min-width: 300px;">
+    <h2>{% translate "Compose" %}</h2>
+    <form id="email-draft-form"
+          hx-post="{% url 'email_draft_preview' %}"
+          hx-trigger="input delay:300ms from:#id_subject, input delay:300ms from:#id_body, clearPreview from:body"
+          hx-target="#preview">
+      {% csrf_token %}
+
+      {{ form.non_field_errors }}
+
+      {% for field in form.visible_fields %}
+        <p>
+          {{ field.label_tag }}
+          {{ field.errors }}
+          {{ field }}
+        </p>
+      {% endfor %}
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button type="button" class="submit-button" style="background-color: #888;" onclick="loadExample()">
+          {% translate "Load Example" %}
+        </button>
+        <button type="button" class="submit-button" style="background-color: #666;" onclick="clearFields()">
+          {% translate "Clear Fields" %}
+        </button>
+      </div>
+    </form>
+  </div>
+  <div style="flex: 1; min-width: 300px;">
+    <h2>{% translate "Preview" %}</h2>
+    <div id="preview">
+      <p style="color: #666; font-style: italic;">{% translate "Enter subject and body to see preview" %}</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const COOKIE_DAYS = 7;
+
+  function setCookie(name, value) {
+    const expires = new Date(Date.now() + COOKIE_DAYS * 864e5).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/; SameSite=Lax';
+  }
+
+  function getCookie(name) {
+    const value = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+    return value ? decodeURIComponent(value.split('=')[1]) : '';
+  }
+
+  function deleteCookie(name) {
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+  }
+
+  function saveFields() {
+    setCookie('email_draft_subject', document.getElementById('id_subject').value);
+    setCookie('email_draft_body', document.getElementById('id_body').value);
+  }
+
+  function loadFields() {
+    const subject = getCookie('email_draft_subject');
+    const body = getCookie('email_draft_body');
+    if (subject) document.getElementById('id_subject').value = subject;
+    if (body) document.getElementById('id_body').value = body;
+    if (subject || body) {
+      htmx.trigger('#id_body', 'input');
+    }
+  }
+
+  function clearFields() {
+    document.getElementById('id_subject').value = '';
+    document.getElementById('id_body').value = '';
+    deleteCookie('email_draft_subject');
+    deleteCookie('email_draft_body');
+    htmx.trigger(document.body, 'clearPreview');
+  }
+
+  function loadExample() {
+    const exampleSubject = 'Thanks for signing up!';
+    const exampleBody = `Dear {% templatetag openvariable %} first_name {% templatetag closevariable %},
+
+<small><i>You are receiving this email because you signed up for <a href="https://bikeaction.org/">Event</a>.</i></small>
+
+Thanks for that!
+
+Bye!
+
+**Philly Bike Action**`;
+
+    document.getElementById('id_subject').value = exampleSubject;
+    document.getElementById('id_body').value = exampleBody;
+    saveFields();
+    htmx.trigger('#id_body', 'input');
+  }
+
+  document.getElementById('id_subject').addEventListener('input', saveFields);
+  document.getElementById('id_body').addEventListener('input', saveFields);
+
+  // Load fields and trigger preview once htmx is ready
+  document.body.addEventListener('htmx:load', function() {
+    loadFields();
+  }, {once: true});
+</script>
+{% endblock %}

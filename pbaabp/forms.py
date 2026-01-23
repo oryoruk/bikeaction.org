@@ -43,3 +43,33 @@ class NewsletterSignupForm(forms.Form):
             attrs={"hx-validate": "true", "placeholder": "Email", "type": "email"}
         ),
     )
+
+
+class EmailDraftForm(forms.Form):
+    subject = forms.CharField(
+        required=True,
+        label=_("Subject"),
+        widget=forms.TextInput(
+            attrs={
+                "placeholder": "Email subject",
+                "autocomplete": "off",
+                "autocorrect": "off",
+                "autocapitalize": "off",
+                "spellcheck": "false",
+            }
+        ),
+    )
+    body = forms.CharField(
+        required=True,
+        label=_("Body (Markdown)"),
+        widget=forms.Textarea(
+            attrs={
+                "placeholder": "Email body in Markdown format",
+                "rows": 15,
+                "autocomplete": "off",
+                "autocorrect": "off",
+                "autocapitalize": "off",
+                "spellcheck": "false",
+            }
+        ),
+    )
