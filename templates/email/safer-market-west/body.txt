@@ -1,0 +1,35 @@
+Hello {{ first_name }},
+
+<i><small>You are receiving this email from <a href="https://bikeaction.org">Philly Bike Action</a> because you have a PBA account.</small></i>
+
+<p style="font-size: larger; font-weight: bold; text-align: center;">SIGN OUR PETITION TO DEMAND A SAFER WEST MARKET STREET!</p>
+
+<div style="text-align: center;">
+<a href="https://bikeaction.org/campaigns/west-market-street/" class="submit-button">Sign The Petition!</a>
+</div>
+
+In November 2025, two pedestrians, Meaza Brown and Rosa Mar Espinosa Rodas, were killed by speeding drivers while crossing Market St. near Drexel’s campus in the span of only 7 days.
+
+**Help us call on city and state leaders to prioritize safety in one of the busiest pedestrian corridors in the city by demanding that:**
+
+<p style="text-align: center">Immediately…</p>
+
+1. **Add speed cushions**
+2. **Add leading pedestrian intervals to all intersections**
+3. **Harden the median with temporary measures**
+4. **Add Flex-Post Protection to the bike lanes in no-stopping zones**
+5. **Reduce the speed limit**
+
+<p style="text-align: center">Begin drafting plans for concrete, long-term solutions such as:</p>
+
+1. **Institute a road diet between 38th St. and the Schuylkill River.**
+2. **Build a concrete median filled with greenery**
+3. **Construct a two-way, concrete protected cycle-path**
+
+<div style="text-align: center;">
+<a href="https://bikeaction.org/campaigns/west-market-street/" class="submit-button">Sign The Petition!</a>
+</div>
+
+This corridor of Market St. experiences high volumes of pedestrians and cyclists, being a crucial connector between Drexel University, the University of Pennsylvania, CHOP Primary Care Centers, Powel Elementary, SLA Middle School, 30th St. Station, the Market-Frankford Line, 5 trolley lines, and 5 bus routes. On weekdays, the corridor sees over 12,000 pedestrians and 2,500 bike trips per day. Almost all Drexel students also must cross Market Street daily as they come from the residential buildings on the north side to academic buildings on the south side. Sign now before tragedy strikes again!
+
+**Philly Bike Action**
