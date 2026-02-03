@@ -61,9 +61,9 @@ async def query_address(request):
         if rco.targetable:
             primary_rco = rco
         rcos_geojson.append(mark_safe(rco.mpoly.geojson))
-        if rco.properties["ORG_TYPE"] == "Ward":
+        if rco.properties["org_type"] == "Ward":
             wards.append(rco)
-        elif rco.properties["ORG_TYPE"] in ["NID", "SSD", None]:
+        elif rco.properties["org_type"] in ["NID", "SSD", None]:
             other.append(rco)
         else:
             rcos.append(rco)

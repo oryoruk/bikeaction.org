@@ -344,8 +344,8 @@ class Profile(models.Model):
             return None
         return (
             RegisteredCommunityOrganizationFacet.objects.filter(mpoly__contains=self.location)
-            .filter(properties__ORG_TYPE="Other")
-            .order_by("properties__OBJECTID")
+            .filter(properties__org_type="Other")
+            .order_by("properties__objectid")
             .all()
         )
 
@@ -357,8 +357,8 @@ class Profile(models.Model):
             return None
         return (
             RegisteredCommunityOrganizationFacet.objects.filter(mpoly__contains=self.location)
-            .filter(properties__ORG_TYPE="Ward")
-            .order_by("properties__OBJECTID")
+            .filter(properties__org_type="Ward")
+            .order_by("properties__objectid")
             .all()
         )
 
@@ -370,8 +370,8 @@ class Profile(models.Model):
             return None
         return (
             RegisteredCommunityOrganizationFacet.objects.filter(mpoly__contains=self.location)
-            .filter(properties__ORG_TYPE__in=["NID", "SSD", None])
-            .order_by("properties__OBJECTID")
+            .filter(properties__org_type__in=["NID", "SSD", None])
+            .order_by("properties__objectid")
             .all()
         )
 

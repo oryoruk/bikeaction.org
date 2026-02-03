@@ -32,7 +32,7 @@
         <th>Other entities registered as RCOs</th>
       </tr>
       {% for rco in profile.other_rcos %}
-      <tr><td>{{ rco }} ({{ rco.properties.ORG_TYPE }})</td></tr>
+      <tr><td>{{ rco }} ({{ rco.properties.org_type }})</td></tr>
       {% endfor %}
     </table>
     {% endif %}
@@ -44,7 +44,7 @@
         <th>Partisan political wards registered as RCOs</th>
       </tr>
       {% for rco in profile.ward_rcos %}
-      <tr><td>{{ rco }} ({{ rco.properties.ORG_TYPE }})</td></tr>
+      <tr><td>{{ rco }} ({{ rco.properties.org_type }})</td></tr>
       {% endfor %}
     </table>
     {% endif %}

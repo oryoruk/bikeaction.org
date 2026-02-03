@@ -31,7 +31,7 @@
 <p>Other entities registered as RCOs:</p>
 <ul>
 {% for rco in OTHER %}
-  <li><a href="{% url 'rco_detail' rco_id=rco.id %}">{{ rco.name }} (<i>{{ rco.properties.ORG_TYPE }} </i>)</a></li>
+  <li><a href="{% url 'rco_detail' rco_id=rco.id %}">{{ rco.name }} (<i>{{ rco.properties.org_type }} </i>)</a></li>
 {% endfor %}
 </ul>
 {% endif %}
@@ -40,7 +40,7 @@
 <p>Partisan political wards registered as RCOs:</p>
 <ul>
 {% for rco in WARDS %}
-  <li><a href="{% url 'rco_detail' rco_id=rco.id %}">{{ rco.name }} (<i>{{ rco.properties.ORG_TYPE }} </i>)</a></li>
+  <li><a href="{% url 'rco_detail' rco_id=rco.id %}">{{ rco.name }} (<i>{{ rco.properties.org_type }} </i>)</a></li>
 {% endfor %}
 </ul>
 {% endif %}

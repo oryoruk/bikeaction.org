@@ -5,7 +5,7 @@
 
 <ul>
   {% for rco in rcos|dictsort:"name" %}
-  {% if rco.properties.ORG_TYPE == "Other" %}
+  {% if rco.properties.org_type == "Other" %}
   <li><a target="_blank" href="{% url 'rco_detail' rco.id %}">{{ rco }}</a></li>
   {% endif %}
   {% endfor %}
@@ -15,7 +15,7 @@
 
 <ul>
   {% for rco in rcos|dictsort:"name" %}
-  {% if rco.properties.ORG_TYPE == "NID" or rco.properties.ORG_TYPE == "SSD" or rco.properties.ORG_TYPE == None %}
+  {% if rco.properties.org_type == "NID" or rco.properties.org_type == "SSD" or rco.properties.org_type == None %}
   <li><a target="_blank" href="{% url 'rco_detail' rco.id %}">{{ rco }}</a></li>
   {% endif %}
   {% endfor %}
@@ -25,7 +25,7 @@
 
 <ul>
   {% for rco in rcos|dictsort:"name" %}
-  {% if rco.properties.ORG_TYPE == "Ward" %}
+  {% if rco.properties.org_type == "Ward" %}
   <li><a target="_blank" href="{% url 'rco_detail' rco.id %}">{{ rco }}</a></li>
   {% endif %}
   {% endfor %}
