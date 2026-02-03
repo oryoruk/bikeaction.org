@@ -30,10 +30,11 @@ mypy-extensions==1.0.0
     # via black
 ovld==0.3.2
     # via jurigged
-packaging==23.2
+packaging==26.0
     # via
     #   black
     #   build
+    #   wheel
 pathspec==0.12.1
     # via black
 pip-tools==7.3.0
@@ -52,7 +53,7 @@ watchdog==3.0.0
     # via jurigged
 wcwidth==0.2.13
     # via blessed
-wheel==0.42.0
+wheel==0.46.2
     # via pip-tools
 
 # The following packages are considered to be unsafe in a requirements file:
