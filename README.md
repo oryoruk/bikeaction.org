@@ -1,4 +1,4 @@
-# apps.bikeaction.org
+ apps.bikeaction.org
 
 This Django codebase is what powers [apps.bikeaction.org](https://apps.bikeaction.org)
 
@@ -22,7 +22,7 @@ and orchestrated with [make](https://www.gnu.org/software/make/).
 
 ### Cloning the repo
 
-Clone you fork of the repo:
+Clone your fork of the repo:
 
 ```shell
 git clone https://github.com/<your github username>/apps.git
